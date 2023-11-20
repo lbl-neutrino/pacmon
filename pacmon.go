@@ -27,11 +27,11 @@ func main() {
 
 	fmt.Println("CONNED")
 
-	poller := zmq.Poller{}
-	poller.Add(socket, zmq.POLLIN)
+	// poller := zmq.Poller{}
+	// poller.Add(socket, zmq.POLLIN)
 
 	for {
-		poller.Poll(10000)
+		// poller.Poll(10000)
 		raw, err := socket.Recv(0)
 		if err != nil {
 			log.Fatal(err)

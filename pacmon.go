@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"log"
 	zmq "github.com/pebbe/zmq4/draft"
@@ -31,20 +32,20 @@ type Word struct {
 
 }
 
-type Msg struct {
-	msgType MsgType
-	timestamp uint32
-	numWords uint16
-	words []Word
+type MsgHeader struct {
+	MsgTypeTag uint32
+	Timestamp uint32
+	_ byte
+	NumWords uint16
 }
 
-func (m *Msg) parse(raw []byte) *Msg {
-	m.msgType = MsgTypeData
-	m.timestamp = 1234
-	m.numWords = 0
-	m.words = []Word{}
-	return m
-}
+// func (m *Msg) parse(r *bytes.Reader) *Msg {
+	// m.msgType = MsgTypeData
+	// m.timestamp = 1234
+	// m.numWords = 0
+	// m.words = []Word{}
+// 	return m
+// }
 
 
 func main() {
@@ -72,7 +73,16 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// fmt.Printf("yo %d %x\n", len(raw), raw)
-		r := bytes.NewReader([]byte(raw))
+		fmt.Printf("yo %d %x\n", len(raw), raw)
+		// r := bytes.NewReader([]byte(raw[:8]))
+		bs := []byte(raw)
+		fmt.Println("bs {}", bs)
+		r := bytes.NewReader(bs)
+		var header MsgHeader
+		err = binary.Read(r, binary.LittleEndian, &header)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(header.MsgTypeTag, header.Timestamp, header.NumWords)
 	}
 }

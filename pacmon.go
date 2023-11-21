@@ -5,10 +5,11 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	// "os"
 	zmq "github.com/pebbe/zmq4/draft"
 )
 
-type MsgType int
+type MsgType byte
 
 const (
 	MsgTypeData MsgType = 'D'
@@ -16,7 +17,7 @@ const (
 	MsgTypeReply MsgType = '!'
 )
 
-type WordType int
+type WordType byte
 
 const (
 	WordTypeData WordType = 'D'
@@ -28,15 +29,64 @@ const (
 	WordTypeError WordType = 'E'
 )
 
-type Word struct {
+type PacData struct {
+	IoChannel byte
+	Timestamp uint32
+	_ [2]byte
+	Packet [8]byte
+}
 
+type PacTrig struct {
+	Type byte
+	_ [2]byte
+	Timestamp uint32
+}
+
+type PacSync struct {
+	Type byte
+	ClkSource byte
+	_ [8]byte
+}
+
+type PacPing struct {
+	_ [15]byte
+}
+
+type PacWrite struct {
+	_ [3]byte
+	Write1 uint32
+	_ [4]byte
+	Write2 uint32
+}
+
+type PacRead struct {
+	_ [3]byte
+	Read1 uint32
+	_ [4]byte
+	Read2 uint32
+}
+
+type PacError struct {
+	Err byte
+	_ [14]byte
+}
+
+
+type Word struct {
+	Type byte
+	Content [15]byte
 }
 
 type MsgHeader struct {
-	MsgTypeTag uint32
+	MsgTypeTag MsgType
 	Timestamp uint32
 	_ byte
 	NumWords uint16
+}
+
+type Msg struct {
+	Header MsgHeader
+	Words []Word
 }
 
 // func (m *Msg) parse(r *bytes.Reader) *Msg {
@@ -73,16 +123,29 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("yo %d %x\n", len(raw), raw)
-		// r := bytes.NewReader([]byte(raw[:8]))
-		bs := []byte(raw)
-		fmt.Println("bs {}", bs)
-		r := bytes.NewReader(bs)
-		var header MsgHeader
-		err = binary.Read(r, binary.LittleEndian, &header)
+
+		// fmt.Printf("yo %d %x\n", len(raw), raw)
+
+		r := bytes.NewReader([]byte(raw))
+		var msg Msg
+		err = binary.Read(r, binary.LittleEndian, &msg.Header)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(header.MsgTypeTag, header.Timestamp, header.NumWords)
+
+		// fmt.Println(msg.Header)
+		// fmt.Println(header.MsgTypeTag, header.Timestamp, header.NumWords)
+
+		for i := uint16(0); i < msg.Header.NumWords; i++ {
+			var word Word
+			binary.Read(r, binary.LittleEndian, &word)
+			msg.Words = append(msg.Words, word)
+		}
+
+		fmt.Println(msg)
+
+		// token := os.Getenv("INFLUXDB_TOKEN")
+
+
 	}
 }

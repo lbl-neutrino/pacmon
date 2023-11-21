@@ -73,12 +73,12 @@ type PacError struct {
 
 
 type Word struct {
-	Type byte
+	Type WordType
 	Content [15]byte
 }
 
 type MsgHeader struct {
-	MsgTypeTag MsgType
+	Type MsgType
 	Timestamp uint32
 	_ byte
 	NumWords uint16

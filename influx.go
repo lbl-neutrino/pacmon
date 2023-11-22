@@ -13,6 +13,7 @@ import (
 )
 
 func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
+	// TODO Set tile_id properly
 	tile_id := 1
 	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
 

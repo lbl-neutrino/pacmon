@@ -4,13 +4,25 @@ import (
 	"bytes"
 	// "fmt"
 	"log"
+	"os"
 	"time"
 
+	cobra "github.com/spf13/cobra"
 	zmq "github.com/pebbe/zmq4/draft"
 )
 
+var PacmanURL string
+var InfluxURL string
+var InfluxOrg string
+var InfluxBucket string
 
-func main() {
+var cmd = cobra.Command{
+	Use: "pacmon",
+	Short: "PACMAN monitor",
+	Run: run,
+}
+
+func run(cmd *cobra.Command, args []string) {
 	var state Monitor
 
 	// ctx := zmq.Context{}
@@ -23,12 +35,12 @@ func main() {
 	// socket.SetRcvtimeo(1000 * 11)
 	// socket.SetSndtimeo(1000 * 11)
 	socket.SetSubscribe("")
-	socket.Connect("tcp://pacman32.local:5556")
+	socket.Connect(PacmanURL)
 
 	// poller := zmq.Poller{}
 	// poller.Add(socket, zmq.POLLIN)
 
-	writeAPI := getWriteAPI()
+	writeAPI := getWriteAPI(InfluxURL, InfluxOrg, InfluxBucket)
 	last := time.Now()
 
 	for {
@@ -59,5 +71,21 @@ func main() {
 			state.WriteToInflux(writeAPI)
 			last = time.Now()
 		}
+	}
+}
+
+func main() {
+	cmd.PersistentFlags().StringVar(&PacmanURL, "pacman-url", "tcp://pacman32.local:5556",
+		"PACMAN data server URL")
+	cmd.PersistentFlags().StringVar(&InfluxURL, "influx-url", "http://localhost:18086",
+		"InfluxDB URL")
+	cmd.PersistentFlags().StringVar(&InfluxOrg, "influx-org", "lbl-neutrino",
+		"InfluxDB organization")
+	cmd.PersistentFlags().StringVar(&InfluxBucket, "influx-bucket", "pacmon-test",
+		"InfluxDB bucket")
+
+	if err := cmd.Execute(); err != nil {
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }

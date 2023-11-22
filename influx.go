@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -49,11 +50,12 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 	writeAPI.WritePoint(context.Background(), point)
 }
 
-func getWriteAPI() api.WriteAPIBlocking {
-	org := "lbl-neutrino"
-	bucket := "pacmon-go"
+func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {
 	token := os.Getenv("INFLUXDB_TOKEN")
-	url := "http://localhost:18086"
+	if token == "" {
+		log.Fatalf("Please set the INFLUXDB_TOKEN environment variable\n")
+		os.Exit(1)
+	}
 	client := influxdb2.NewClient(url, token)
 	return client.WriteAPIBlocking(org, bucket)
 }

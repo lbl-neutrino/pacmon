@@ -2,6 +2,15 @@ package main
 
 type Packet [8]byte
 
+type PacketType uint8
+
+const (
+	PacketTypeData PacketType = 0
+	PacketTypeError PacketType = 1
+	PacketTypeWrite PacketType = 2
+	PacketTypeRead PacketType = 3
+)
+
 func (p *Packet) Type() uint8 {
 	return p[0] & 3
 }

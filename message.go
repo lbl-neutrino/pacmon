@@ -1,7 +1,8 @@
 package main
 
 import (
-	"binary"
+	"bytes"
+	"encoding/binary"
 	"io"
 	"strconv"
 )
@@ -96,6 +97,41 @@ type Word struct {				// [16]byte
 	Content [15]byte
 }
 
+func castWord[T any](w *Word) T {
+	var ret T
+	r := bytes.NewReader(w.Content[:])
+	binary.Read(r, binary.LittleEndian, &ret)
+	return ret
+}
+
+func (w *Word) PacData() PacData {
+	return castWord[PacData](w)
+}
+
+func (w *Word) PacTrig() PacTrig {
+	return castWord[PacTrig](w)
+}
+
+func (w *Word) PacSync() PacSync {
+	return castWord[PacSync](w)
+}
+
+func (w *Word) PacPing() PacPing {
+	return castWord[PacPing](w)
+}
+
+func (w *Word) PacWrite() PacWrite {
+	return castWord[PacWrite](w)
+}
+
+func (w *Word) PacRead() PacRead {
+	return castWord[PacRead](w)
+}
+
+func (w *Word) PacError() PacError {
+	return castWord[PacError](w)
+}
+
 type MsgHeader struct {			// [8]byte
 	Type MsgType				// byte
 	Timestamp uint32
@@ -119,4 +155,6 @@ func (m *Msg) Read(r io.Reader) error {
 		binary.Read(r, binary.LittleEndian, &word)
 		m.Words = append(m.Words, word)
 	}
+
+	return nil
 }

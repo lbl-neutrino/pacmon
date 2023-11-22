@@ -2,97 +2,16 @@ package main
 
 import (
 	"bytes"
-	"context"
-	"fmt"
+	// "fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
-	zmq "github.com/pebbe/zmq4/draft"
-    influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	api "github.com/influxdata/influxdb-client-go/v2/api"
-	write "github.com/influxdata/influxdb-client-go/v2/api/write"
 
+	zmq "github.com/pebbe/zmq4/draft"
 )
 
-type DataStatusCounts struct {
-	Total uint
-	ValidParity uint
-	InvalidParity uint
-	Downstream uint
-	Upstream uint
-}
-
-type ConfigStatusCounts struct {
-	Total uint
-	InvalidParity uint
-	DownstreamRead uint
-	DownstreamWrite uint
-	UpstreamRead uint
-	UpstreamWrite uint
-}
-
-type MonitorState struct {
-	WordTypeCounts map[WordType]uint
-	DataStatusCounts map[IoChannel]DataStatusCounts
-	ConfigStatusCounts map[IoChannel]ConfigStatusCounts
-}
-
-func NewMonitorState() MonitorState {
-	state := MonitorState{}
-	// for wordtype, _label := range WordTypeLabels {
-	// 	state.WordTypeCounts[wordtype] = 0
-	// }
-	return state
-}
-
-func (m *MonitorState) RecordType(word Word) {
-}
-
-func (m *MonitorState) RecordStatuses(word Word) {
-}
-
-func (s *MonitorState) WriteToInflux(writeAPI api.WriteAPIBlocking) {
-	tile_id := 1
-	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
-
-	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, time.Now())
-	}
-
-	point := makePoint("word_types")
-	for wordtype, count := range s.WordTypeCounts {
-		point.AddField(wordtype.String(), count)
-	}
-	writeAPI.WritePoint(context.Background(), point)
-
-	for ioChannel, counts := range s.DataStatusCounts {
-		point = makePoint("data_statuses")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
-		point.AddField("Total", counts.Total)
-		point.AddField("ValidParity", counts.ValidParity)
-		point.AddField("InvalidParity", counts.InvalidParity)
-		point.AddField("Downstream", counts.Downstream)
-		point.AddField("Upstream", counts.Upstream)
-	}
-	writeAPI.WritePoint(context.Background(), point)
-
-	for ioChannel, counts := range s.ConfigStatusCounts {
-		point = makePoint("config_statuses")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
-		point.AddField("Total", counts.Total)
-		point.AddField("InvalidParity", counts.InvalidParity)
-		point.AddField("DownstreamRead", counts.DownstreamRead)
-		point.AddField("DownstreamWrite", counts.DownstreamWrite)
-		point.AddField("UpstreamRead", counts.UpstreamRead)
-		point.AddField("UpstreamWrite", counts.UpstreamWrite)
-	}
-	writeAPI.WritePoint(context.Background(), point)
-}
 
 func main() {
-	fmt.Println("sdf")
-	state := NewMonitorState()
+	var state Monitor
 
 	// ctx := zmq.Context{}
 
@@ -109,14 +28,9 @@ func main() {
 	// poller := zmq.Poller{}
 	// poller.Add(socket, zmq.POLLIN)
 
-	org := "lbl-neutrino"
-	bucket := "pacmon-go"
-	token := os.Getenv("INFLUXDB_TOKEN")
-	url := "http://localhost:18086"
-	client := influxdb2.NewClient(url, token)
-	writeAPI := client.WriteAPIBlocking(org, bucket)
-
+	writeAPI := getWriteAPI()
 	last := time.Now()
+
 	for {
 		// poller.Poll(10000)
 		raw, err := socket.Recv(0)
@@ -138,14 +52,12 @@ func main() {
 		// fmt.Println(header.MsgTypeTag, header.Timestamp, header.NumWords)
 
 		for _, word := range msg.Words {
-			state.RecordType(word)
-			state.RecordStatuses(word)
+			state.ProcessWord(word)
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
 			state.WriteToInflux(writeAPI)
 			last = time.Now()
 		}
-
 	}
 }

@@ -50,8 +50,11 @@ command-line options. Run `./pacmon --help` for a full list of options.
 
 ## Adding metrics
 
-In `monitor.go`, add the necessary data fields (e.g. `NoiseRate`) to the
-`Monitor` structure. Then add a function like
+In `monitor.go`, first add the necessary data fields (e.g. `NoiseRate`) to the
+`Monitor` structure. If you're adding something that requires initialization,
+such as a `map`, then also edit the `NewMonitor` function.
+
+Then add a function like
 
 ``` go
 func (m *Monitor) RecordNoiseRate(word Word) {
@@ -64,7 +67,7 @@ in `influx.go`, edit the `WriteToInflux` function so that it writes a data point
 containing the noise rate.
 
 Once patterns start emerging in the code, we can switch to a more modular
-structure that doesn't require editing existing functions.
+structure that doesn't require editing so many existing functions.
 
 ## Copyright and Licensing
 

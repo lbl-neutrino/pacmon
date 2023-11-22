@@ -23,7 +23,7 @@ var cmd = cobra.Command{
 }
 
 func run(cmd *cobra.Command, args []string) {
-	var state Monitor
+	monitor := NewMonitor()
 
 	// ctx := zmq.Context{}
 
@@ -64,11 +64,11 @@ func run(cmd *cobra.Command, args []string) {
 		// fmt.Println(header.MsgTypeTag, header.Timestamp, header.NumWords)
 
 		for _, word := range msg.Words {
-			state.ProcessWord(word)
+			monitor.ProcessWord(word)
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
-			state.WriteToInflux(writeAPI)
+			monitor.WriteToInflux(writeAPI)
 			last = time.Now()
 		}
 	}

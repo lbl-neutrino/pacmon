@@ -23,6 +23,14 @@ type Monitor struct {
 	ConfigStatusCounts map[IoChannel]ConfigStatusCounts
 }
 
+func NewMonitor() *Monitor {
+	return &Monitor{
+		WordTypeCounts: make(map[WordType]uint),
+		DataStatusCounts: make(map[IoChannel]DataStatusCounts),
+		ConfigStatusCounts: make(map[IoChannel]ConfigStatusCounts),
+	}
+}
+
 func (m *Monitor) ProcessWord(word Word) {
 	m.RecordType(word)
 	m.RecordStatuses(word)

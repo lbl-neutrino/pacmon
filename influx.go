@@ -35,8 +35,8 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 		point.AddField("invalid_parity", counts.InvalidParity)
 		point.AddField("downstream", counts.Downstream)
 		point.AddField("upstream", counts.Upstream)
+		writeAPI.WritePoint(context.Background(), point)
 	}
-	writeAPI.WritePoint(context.Background(), point)
 
 	for ioChannel, counts := range m.ConfigStatusCounts {
 		point = makePoint("config_statuses")
@@ -47,8 +47,8 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 		point.AddField("downstream_write", counts.DownstreamWrite)
 		point.AddField("upstream_read", counts.UpstreamRead)
 		point.AddField("upstream_write", counts.UpstreamWrite)
+		writeAPI.WritePoint(context.Background(), point)
 	}
-	writeAPI.WritePoint(context.Background(), point)
 }
 
 func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {

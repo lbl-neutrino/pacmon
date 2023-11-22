@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -54,7 +54,8 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {
 	token := os.Getenv("INFLUXDB_TOKEN")
 	if token == "" {
-		log.Fatalf("Please set the INFLUXDB_TOKEN environment variable\n")
+		fmt.Fprintf(os.Stderr,
+			"Please set the INFLUXDB_TOKEN environment variable\n")
 		os.Exit(1)
 	}
 	client := influxdb2.NewClient(url, token)

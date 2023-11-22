@@ -48,6 +48,11 @@ where `...` should be replaced by your InfluxDB API token.
 The connection parameters (for PACMAN and InfluxDB) can be controlled via
 command-line options. Run `./pacmon --help` for a full list of options.
 
+## Existing metrics
+
+Currently `pacmon` writes the same set of metrics displayed by Kevin's original
+`pacmon.py`. See `monitor.go` for how they're calculated.
+
 ## Adding metrics
 
 In `monitor.go`, first add the necessary data fields (e.g. `NoiseRate`) to the

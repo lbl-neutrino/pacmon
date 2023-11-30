@@ -88,4 +88,8 @@ func (m *Monitor) RecordStatuses(word Word) {
 			configStatuses.UpstreamWrite++
 		}
 	}
+
+	m.DataStatusCounts[ioChannel] = dataStatuses
+	m.ConfigStatusCounts[ioChannel] = configStatuses
+
 }

@@ -54,11 +54,9 @@ func (m *Monitor) RecordStatuses(word Word) {
 
 	ioChannel := pacData.IoChannel
 
-	var dataStatuses DataStatusCounts
-	var configStatuses ConfigStatusCounts
 	// Initialize with current values in monitor
-	dataStatuses = m.DataStatusCounts[ioChannel]
-	configStatuses = m.ConfigStatusCounts[ioChannel]
+	dataStatuses := m.DataStatusCounts[ioChannel]
+	configStatuses := m.ConfigStatusCounts[ioChannel]
 
 	packet := pacData.Packet
 	isConfigRead := packet.Type() == PacketTypeRead

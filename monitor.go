@@ -53,6 +53,8 @@ func (m *Monitor) RecordStatuses(word Word) {
 	pacData := word.PacData()
 
 	ioChannel := pacData.IoChannel
+
+	// Initialize with current values in monitor
 	dataStatuses := m.DataStatusCounts[ioChannel]
 	configStatuses := m.ConfigStatusCounts[ioChannel]
 
@@ -88,4 +90,9 @@ func (m *Monitor) RecordStatuses(word Word) {
 			configStatuses.UpstreamWrite++
 		}
 	}
+
+	// Update monitor
+	m.DataStatusCounts[ioChannel] = dataStatuses
+	m.ConfigStatusCounts[ioChannel] = configStatuses
+
 }

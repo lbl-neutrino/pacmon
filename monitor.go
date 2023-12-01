@@ -17,10 +17,16 @@ type ConfigStatusCounts struct {
 	UpstreamWrite uint
 }
 
+type FifoFlags struct {
+	LocalFifoFlags uint8
+	SharedFifoFlags uint8
+}
+
 type Monitor struct {
 	WordTypeCounts map[WordType]uint
 	DataStatusCounts map[IoChannel]DataStatusCounts
 	ConfigStatusCounts map[IoChannel]ConfigStatusCounts
+	FifoFlags map[IoChannel]FifoFlags
 }
 
 func NewMonitor() *Monitor {
@@ -28,12 +34,14 @@ func NewMonitor() *Monitor {
 		WordTypeCounts: make(map[WordType]uint),
 		DataStatusCounts: make(map[IoChannel]DataStatusCounts),
 		ConfigStatusCounts: make(map[IoChannel]ConfigStatusCounts),
+		FifoFlags: make(map[IoChannel]FifoFlags),
 	}
 }
 
 func (m *Monitor) ProcessWord(word Word) {
 	m.RecordType(word)
 	m.RecordStatuses(word)
+	m.RecordFifoFlags(word)
 }
 
 func (m *Monitor) RecordType(word Word) {
@@ -97,4 +105,21 @@ func (m *Monitor) RecordStatuses(word Word) {
 	m.DataStatusCounts[ioChannel] = dataStatuses
 	m.ConfigStatusCounts[ioChannel] = configStatuses
 
+}
+
+func (m *Monitor) RecordFifoFlags(word Word) {
+	if word.Type != WordTypeData {
+		return
+	}
+
+	pacData := word.PacData()
+	ioChannel := pacData.IoChannel
+
+	var fifoFlags FifoFlags
+
+	fifoFlags.LocalFifoFlags = pacData.Packet.LocalFifoFlags()
+	fifoFlags.SharedFifoFlags = pacData.Packet.SharedFifoFlags()
+
+	m.FifoFlags[ioChannel] = fifoFlags
+	
 }

@@ -20,6 +20,8 @@ type ConfigStatusCounts struct {
 type FifoFlags struct {
 	LocalFifoFlags uint8
 	SharedFifoFlags uint8
+	Chip uint8
+	Channel uint8
 }
 
 type Monitor struct {
@@ -112,11 +114,14 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 
 	pacData := word.PacData()
 	ioChannel := pacData.IoChannel
+	packet := pacData.Packet
 
 	var fifoFlags FifoFlags
 
-	fifoFlags.LocalFifoFlags = pacData.Packet.LocalFifoFlags()
-	fifoFlags.SharedFifoFlags = pacData.Packet.SharedFifoFlags()
+	fifoFlags.LocalFifoFlags = packet.LocalFifoFlags()
+	fifoFlags.SharedFifoFlags = packet.SharedFifoFlags()
+	fifoFlags.Chip = packet.Chip()
+	fifoFlags.Channel = packet.Channel()
 
 	m.FifoFlags[ioChannel] = fifoFlags
 	

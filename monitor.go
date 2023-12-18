@@ -17,18 +17,35 @@ type ConfigStatusCounts struct {
 	UpstreamWrite uint
 }
 
-type FifoFlags struct {
-	LocalFifoFlags uint8
-	SharedFifoFlags uint8
-	Chip uint8
-	Channel uint8
+type FifoFlag uint8
+
+type Channel struct {
+	IoChannel IoChannel
+	ChipID uint8
+	ChannelID uint8
 }
+
+type FifoFlagCounts struct {
+	LocalFifoLessHalfFull uint
+	LocalFifoMoreHalfFull uint
+	LocalFifoFull uint
+	
+	SharedFifoLessHalfFull uint
+	SharedFifoMoreHalfFull uint
+	SharedFifoFull uint
+}
+
+const (
+	FifoLessHalfFull FifoFlag = 0
+	FifoMoreHalfFull FifoFlag = 1
+	FifoFull FifoFlag = 2
+)
 
 type Monitor struct {
 	WordTypeCounts map[WordType]uint
 	DataStatusCounts map[IoChannel]DataStatusCounts
 	ConfigStatusCounts map[IoChannel]ConfigStatusCounts
-	FifoFlags map[IoChannel]FifoFlags
+	FifoFlagCounts map[Channel]FifoFlagCounts
 }
 
 func NewMonitor() *Monitor {
@@ -36,7 +53,7 @@ func NewMonitor() *Monitor {
 		WordTypeCounts: make(map[WordType]uint),
 		DataStatusCounts: make(map[IoChannel]DataStatusCounts),
 		ConfigStatusCounts: make(map[IoChannel]ConfigStatusCounts),
-		FifoFlags: make(map[IoChannel]FifoFlags),
+		FifoFlagCounts: make(map[Channel]FifoFlagCounts),
 	}
 }
 
@@ -113,16 +130,35 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 	}
 
 	pacData := word.PacData()
-	ioChannel := pacData.IoChannel
 	packet := pacData.Packet
+	var channel Channel
+	channel.IoChannel = pacData.IoChannel
+	channel.ChipID = packet.Chip()
+	channel.ChannelID = packet.Channel()
 
-	var fifoFlags FifoFlags
+	fifoFlagCounts := m.FifoFlagCounts[channel]
 
-	fifoFlags.LocalFifoFlags = packet.LocalFifoFlags()
-	fifoFlags.SharedFifoFlags = packet.SharedFifoFlags()
-	fifoFlags.Chip = packet.Chip()
-	fifoFlags.Channel = packet.Channel()
+	// Local FIFOs
+	switch FifoFlag(packet.LocalFifoFlags()) {
+	case FifoLessHalfFull:
+		fifoFlagCounts.LocalFifoLessHalfFull++
+	case FifoMoreHalfFull:
+		fifoFlagCounts.LocalFifoMoreHalfFull++
+	case FifoFull:
+		fifoFlagCounts.LocalFifoFull++
+	}
 
-	m.FifoFlags[ioChannel] = fifoFlags
+	// Shared FIFOs
+	switch FifoFlag(packet.SharedFifoFlags()) {
+	case FifoLessHalfFull:
+		fifoFlagCounts.SharedFifoLessHalfFull++
+	case FifoMoreHalfFull:
+		fifoFlagCounts.SharedFifoMoreHalfFull++
+	case FifoFull:
+		fifoFlagCounts.SharedFifoFull++
+	}
+
+	// Update monitor
+	m.FifoFlagCounts[channel] = fifoFlagCounts
 	
 }

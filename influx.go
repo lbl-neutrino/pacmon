@@ -50,13 +50,20 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 		writeAPI.WritePoint(context.Background(), point)
 	}
 
-	for ioChannel, counts := range m.FifoFlags {
+	for channel, counts := range m.FifoFlagCounts {
 		point = makePoint("fifo_flags")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
-		point.AddTag("chip", strconv.Itoa(int(counts.Chip)))
-		point.AddTag("channel", strconv.Itoa(int(counts.Channel)))
-		point.AddField("local_fifo_flags", counts.LocalFifoFlags)
-		point.AddField("shared_fifo_flags", counts.SharedFifoFlags)
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("local_fifo_less_half_full", counts.LocalFifoLessHalfFull)
+		point.AddField("local_fifo_more_half_full", counts.LocalFifoMoreHalfFull)
+		point.AddField("local_fifo_full", counts.LocalFifoFull)
+
+		point.AddField("shared_fifo_less_half_full", counts.SharedFifoLessHalfFull)
+		point.AddField("shared_fifo_more_half_full", counts.SharedFifoMoreHalfFull)
+		point.AddField("shared_fifo_full", counts.SharedFifoFull)
+
 		writeAPI.WritePoint(context.Background(), point)
 	}
 

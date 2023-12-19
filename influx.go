@@ -49,6 +49,24 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 		point.AddField("upstream_write", counts.UpstreamWrite)
 		writeAPI.WritePoint(context.Background(), point)
 	}
+
+	for channel, counts := range m.FifoFlagCounts {
+		point = makePoint("fifo_flags")
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("local_fifo_less_half_full", counts.LocalFifoLessHalfFull)
+		point.AddField("local_fifo_more_half_full", counts.LocalFifoMoreHalfFull)
+		point.AddField("local_fifo_full", counts.LocalFifoFull)
+
+		point.AddField("shared_fifo_less_half_full", counts.SharedFifoLessHalfFull)
+		point.AddField("shared_fifo_more_half_full", counts.SharedFifoMoreHalfFull)
+		point.AddField("shared_fifo_full", counts.SharedFifoFull)
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
 }
 
 func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {

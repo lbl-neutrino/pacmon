@@ -3,26 +3,35 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
-var Geometry = make(map[string]interface{})
+type Geometry struct {
+	Chips  [][]interface{} `yaml:"chips"`
+	Chips  [][]interface{} `yaml:"pixels"`
+}
 
 var NChips = 100
 var NChannels = 64
 
 func LoadGeometry(geofile string) {
    
-	yamlFile, err := ioutil.ReadFile(geofile)
+	// Read YAML file
+	yamlFile, err := ioutil.ReadFile("test.yaml")
 	if err != nil {
-	 fmt.Printf("yamlFile.Get err #%v ", err)
+		panic(err)
 	}
-	err = yaml.Unmarshal(yamlFile, obj)
+
+	// Create an instance of the Config struct to store the unmarshaled data
+	var config Config
+
+	// Unmarshal YAML into the Config struct
+	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-	 fmt.Printf("Unmarshal: %v", err)
+		panic(err)
 	}
-	//fmt.Println(obj["chips"])
+
+
 }
 
 func ChipChannelToXY(Chip uint8, Channel uint8){

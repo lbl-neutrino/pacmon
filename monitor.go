@@ -48,6 +48,17 @@ type Monitor struct {
 	FifoFlagCounts map[Channel]FifoFlagCounts
 }
 
+type Monitor10s struct {
+	ADCMeanTotal float64
+	ADCRMSTotal float64
+
+	ADCMeanPerChannel map[Channel]float64
+	ADCRMSPerChannel map[Channel]float64
+
+	NPacketsTotal uint32
+	NPacketsPerChannel map[Channel]uint32
+}
+
 func NewMonitor() *Monitor {
 	return &Monitor{
 		WordTypeCounts: make(map[WordType]uint),
@@ -57,10 +68,22 @@ func NewMonitor() *Monitor {
 	}
 }
 
+func NewMonitor10s() *Monitor10s {
+	return &Monitor10s{
+		ADCMeanPerChannel: make(map[Channel]float64),
+		ADCRMSPerChannel: make(map[Channel]float64),
+		NPacketsPerChannel: make(map[Channel]uint32),
+	}
+}
+
 func (m *Monitor) ProcessWord(word Word) {
 	m.RecordType(word)
 	m.RecordStatuses(word)
 	m.RecordFifoFlags(word)
+}
+
+func (m10s *Monitor10s) ProcessWord(word Word) {
+	m10s.RecordADC(word)
 }
 
 func (m *Monitor) RecordType(word Word) {
@@ -165,11 +188,24 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 	
 }
 
-func (m *Monitor) RecordADC(word Word) {
+func (m10s *Monitor10s) RecordADC(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
 
 	pacData := word.PacData()
-	ioChannel := pacData.IoChannel
+	packet := pacData.Packet
+	var channel Channel
+	channel.IoChannel = pacData.IoChannel
+	channel.ChipID = packet.Chip()
+	channel.ChannelID = packet.Channel()
+
+	adc := float64(packet.Data())
+
+	m10s.ADCMeanTotal, m10s.ADCRMSTotal = UpdateMeanRMS(m10s.ADCMeanTotal, m10s.ADCRMSTotal, m10s.NPacketsTotal, adc)
+	m10s.NPacketsTotal++
+
+	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] = UpdateMeanRMS(m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel], m10s.NPacketsPerChannel[channel], adc)
+	m10s.NPacketsPerChannel[channel]++
+
 }

@@ -24,6 +24,7 @@ var cmd = cobra.Command{
 
 func run(cmd *cobra.Command, args []string) {
 	monitor := NewMonitor()
+	monitor10s := NewMonitor10s()
 
 	// ctx := zmq.Context{}
 
@@ -42,6 +43,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	writeAPI := getWriteAPI(InfluxURL, InfluxOrg, InfluxBucket)
 	last := time.Now()
+	last10s := time.Now()
 
 	for {
 		// poller.Poll(10000)
@@ -65,11 +67,18 @@ func run(cmd *cobra.Command, args []string) {
 
 		for _, word := range msg.Words {
 			monitor.ProcessWord(word)
+			monitor10s.ProcessWord(word)
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
 			monitor.WriteToInflux(writeAPI)
 			last = time.Now()
+		}
+
+		if time.Now().Sub(last10s).Seconds() > 10 {
+			monitor10s.WriteToInflux(writeAPI)
+			monitor10s = NewMonitor10s() // Reset monitor
+			last10s = time.Now()
 		}
 	}
 }

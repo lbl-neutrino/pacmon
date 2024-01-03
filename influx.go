@@ -49,6 +49,55 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
 		writeAPI.WritePoint(context.Background(), point)
 	}
+
+	for channel, counts := range m.FifoFlagCounts {
+		point = makePoint("fifo_flags")
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("local_fifo_less_half_full", counts.LocalFifoLessHalfFull)
+		point.AddField("local_fifo_more_half_full", counts.LocalFifoMoreHalfFull)
+		point.AddField("local_fifo_full", counts.LocalFifoFull)
+
+		point.AddField("shared_fifo_less_half_full", counts.SharedFifoLessHalfFull)
+		point.AddField("shared_fifo_more_half_full", counts.SharedFifoMoreHalfFull)
+		point.AddField("shared_fifo_full", counts.SharedFifoFull)
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
+}
+
+func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking) {
+	// TODO Set tile_id properly
+	tile_id := 1
+	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
+
+	makePoint := func (name string) *write.Point {
+		return influxdb2.NewPoint(name, tags, nil, time.Now())
+	}
+
+	point := makePoint("packet_adc_total")
+	point.AddField("adc_mean", m10s.ADCMeanTotal)
+	point.AddField("adc_rms", m10s.ADCRMSTotal)
+	point.AddField("n_packets", m10s.NPacketsTotal)
+	writeAPI.WritePoint(context.Background(), point)
+
+	for channel, adc := range m10s.ADCMeanPerChannel {
+		point = makePoint("packet_adc_per_channel")
+
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("adc_mean", adc)
+		point.AddField("adc_rms", m10s.ADCRMSPerChannel[channel])
+		point.AddField("n_packets", m10s.NPacketsPerChannel[channel])
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
 }
 
 func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {

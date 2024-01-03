@@ -71,7 +71,8 @@ func run(cmd *cobra.Command, args []string) {
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
-			monitor.WriteToInflux(writeAPI)
+			monitor.WriteToInflux(writeAPI, time.Now().Sub(last).Seconds())
+			monitor = NewMonitor()
 			last = time.Now()
 		}
 

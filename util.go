@@ -1,8 +1,9 @@
 package main
 
-// import (
-// 	"encoding/binary"
-// )
+import (
+	// "encoding/binary"
+	"math"
+)
 
 func Parity64(data Packet) byte {
 	// x := binary.LittleEndian.Uint64(data)
@@ -14,4 +15,16 @@ func Parity64(data Packet) byte {
 	x ^= x >> 4
 	x ^= x >> 2
 	return byte(x) & 1
+}
+
+func UpdateMeanRMS(oldMean float64, oldRMS float64, oldNPackets uint32, newValue float64) (float64, float64) {
+	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
+	if oldNPackets == 0 {
+		return newValue, 0.
+	}
+	
+	newMean := oldMean + (newValue - oldMean) / (float64(oldNPackets) + 1.)
+	oldVariance := math.Pow(oldRMS, 2)
+	newVariance := oldVariance + ((newValue - oldMean) * (newValue - newMean) - oldVariance) / (float64(oldNPackets) + 1.)
+	return newMean, math.Sqrt(newVariance)
 }

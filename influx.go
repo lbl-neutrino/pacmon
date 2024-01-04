@@ -51,21 +51,34 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 	}
 
 	for channel, counts := range m.FifoFlagCounts {
-		point = makePoint("fifo_flags")
+		point = makePoint("local_fifo_statuses")
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-		point.AddField("local_fifo_less_half_full", counts.LocalFifoLessHalfFull)
-		point.AddField("local_fifo_more_half_full", counts.LocalFifoMoreHalfFull)
-		point.AddField("local_fifo_full", counts.LocalFifoFull)
+		total := float64(counts.LocalFifoLessHalfFull + counts.LocalFifoMoreHalfFull + counts.LocalFifoFull)
 
-		point.AddField("shared_fifo_less_half_full", counts.SharedFifoLessHalfFull)
-		point.AddField("shared_fifo_more_half_full", counts.SharedFifoMoreHalfFull)
-		point.AddField("shared_fifo_full", counts.SharedFifoFull)
+		point.AddField("less_half_full", float64(counts.LocalFifoLessHalfFull)/total)
+		point.AddField("more_half_full", float64(counts.LocalFifoMoreHalfFull)/total)
+		point.AddField("full", float64(counts.LocalFifoFull)/total)
 
 		writeAPI.WritePoint(context.Background(), point)
 	}
+
+	for channel, counts := range m.FifoFlagCounts {
+		point = makePoint("shared_fifo_statuses")
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+
+		total := float64(counts.SharedFifoLessHalfFull + counts.SharedFifoMoreHalfFull + counts.SharedFifoFull)
+
+		point.AddField("less_half_full", float64(counts.SharedFifoLessHalfFull)/total)
+		point.AddField("more_half_full", float64(counts.SharedFifoMoreHalfFull)/total)
+		point.AddField("full", float64(counts.SharedFifoFull)/total)
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
 
 }
 

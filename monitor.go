@@ -57,6 +57,9 @@ type Monitor10s struct {
 
 	NPacketsTotal uint32
 	NPacketsPerChannel map[Channel]uint32
+
+	DataStatusCountsPerChannel map[Channel]DataStatusCounts
+	ConfigStatusCountsPerChannel map[Channel]ConfigStatusCounts
 }
 
 func NewMonitor() *Monitor {
@@ -73,6 +76,8 @@ func NewMonitor10s() *Monitor10s {
 		ADCMeanPerChannel: make(map[Channel]float64),
 		ADCRMSPerChannel: make(map[Channel]float64),
 		NPacketsPerChannel: make(map[Channel]uint32),
+		DataStatusCountsPerChannel: make(map[Channel]DataStatusCounts),
+		ConfigStatusCountsPerChannel: make(map[Channel]ConfigStatusCounts),
 	}
 }
 
@@ -83,6 +88,7 @@ func (m *Monitor) ProcessWord(word Word) {
 }
 
 func (m10s *Monitor10s) ProcessWord(word Word) {
+	m10s.RecordStatuses(word)
 	m10s.RecordADC(word)
 }
 
@@ -186,6 +192,64 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 	// Update monitor
 	m.FifoFlagCounts[channel] = fifoFlagCounts
 	
+}
+
+func (m10s *Monitor10s) RecordStatuses(word Word) {
+	if word.Type != WordTypeData {
+		return
+	}
+
+	pacData := word.PacData()
+	packet := pacData.Packet
+
+	var channel Channel
+	channel.IoChannel = pacData.IoChannel
+	channel.ChipID = packet.Chip()
+	channel.ChannelID = packet.Channel()
+
+	var dataStatuses DataStatusCounts
+	var configStatuses ConfigStatusCounts
+
+	// Initialize with current values in monitor
+	dataStatuses = m10s.DataStatusCountsPerChannel[channel]
+	configStatuses = m10s.ConfigStatusCountsPerChannel[channel]
+
+	isConfigRead := packet.Type() == PacketTypeRead
+	isConfigWrite := packet.Type() == PacketTypeWrite
+	isConfig := isConfigRead || isConfigWrite
+
+	dataStatuses.Total++
+	if isConfig {
+		configStatuses.Total++
+	}
+
+	if packet.ValidParity() {
+		dataStatuses.ValidParity++
+	} else {
+		dataStatuses.InvalidParity++
+		configStatuses.InvalidParity++
+	}
+
+	if packet.Downstream() {
+		dataStatuses.Downstream++
+		if isConfigRead {
+			configStatuses.DownstreamRead++
+		} else if isConfigWrite {
+			configStatuses.DownstreamWrite++
+		}
+	} else {
+		dataStatuses.Upstream++
+		if isConfigRead {
+			configStatuses.UpstreamRead++
+		} else if isConfigWrite {
+			configStatuses.UpstreamWrite++
+		}
+	}
+
+	// Update monitor
+	m10s.DataStatusCountsPerChannel[channel] = dataStatuses
+	m10s.ConfigStatusCountsPerChannel[channel] = configStatuses
+
 }
 
 func (m10s *Monitor10s) RecordADC(word Word) {

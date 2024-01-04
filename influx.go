@@ -69,7 +69,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 
 }
 
-func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking) {
+func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64) {
 	// TODO Set tile_id properly
 	tile_id := 1
 	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
@@ -97,6 +97,40 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking) {
 
 		writeAPI.WritePoint(context.Background(), point)
 	}
+
+	for channel, counts := range m10s.DataStatusCountsPerChannel {
+		point = makePoint("data_statuses_rates_per_channel")
+
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("total", float64(counts.Total)/timeDiff)
+		point.AddField("valid_parity", float64(counts.ValidParity)/timeDiff)
+		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
+		point.AddField("downstream", float64(counts.Downstream)/timeDiff)
+		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
+	for channel, counts := range m10s.ConfigStatusCountsPerChannel {
+		point = makePoint("config_statuses_rates_per_channel")
+
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("total", float64(counts.Total)/timeDiff)
+		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
+		point.AddField("downstream_read", float64(counts.DownstreamRead)/timeDiff)
+		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
+		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
+		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
 
 }
 

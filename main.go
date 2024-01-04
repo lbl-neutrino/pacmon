@@ -72,12 +72,12 @@ func run(cmd *cobra.Command, args []string) {
 
 		if time.Now().Sub(last).Seconds() > 1 {
 			monitor.WriteToInflux(writeAPI, time.Now().Sub(last).Seconds())
-			monitor = NewMonitor()
+			monitor = NewMonitor() // Reset monitor
 			last = time.Now()
 		}
 
 		if time.Now().Sub(last10s).Seconds() > 10 {
-			monitor10s.WriteToInflux(writeAPI)
+			monitor10s.WriteToInflux(writeAPI, time.Now().Sub(last).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = time.Now()
 		}

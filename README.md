@@ -52,7 +52,7 @@ and the corresponding IO group. For instance:
 
 ``` bash
 ./pacmon \
-    --pacman-url "tcp://pacman35.local:5556,tcp://pacman22.local:5556"
+    --pacman-url "tcp://pacman35.local:5556,tcp://pacman22.local:5556" \
     --pacman-iog "1,2"
 ```
 

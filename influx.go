@@ -29,7 +29,10 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 
 	for ioChannel, counts := range m.DataStatusCounts {
 		point = makePoint("data_statuses_rates")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
+
+		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
+		
 		point.AddField("total", float64(counts.Total)/timeDiff)
 		point.AddField("valid_parity", float64(counts.ValidParity)/timeDiff)
 		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
@@ -40,7 +43,10 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 
 	for ioChannel, counts := range m.ConfigStatusCounts {
 		point = makePoint("config_statuses_rates")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
+
+		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
+		
 		point.AddField("total", float64(counts.Total)/timeDiff)
 		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
 		point.AddField("downstream_read", float64(counts.DownstreamRead)/timeDiff)
@@ -57,6 +63,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 		}
 
 		point = makePoint("local_fifo_statuses")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
@@ -75,6 +82,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 		}
 
 		point = makePoint("shared_fifo_statuses")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 
@@ -106,6 +114,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	for channel, adc := range m10s.ADCMeanPerChannel {
 		point = makePoint("packet_adc_per_channel")
 
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
@@ -120,6 +129,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	for channel, counts := range m10s.DataStatusCountsPerChannel {
 		point = makePoint("data_statuses_rates_per_channel")
 
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
@@ -136,6 +146,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	for channel, counts := range m10s.ConfigStatusCountsPerChannel {
 		point = makePoint("config_statuses_rates_per_channel")
 
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))

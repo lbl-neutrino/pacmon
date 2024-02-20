@@ -6,12 +6,15 @@ import (
 	"log"
 	"os"
 	"time"
+	"sync"
+	"strconv"
 
 	cobra "github.com/spf13/cobra"
 	zmq "github.com/pebbe/zmq4/draft"
 )
 
-var PacmanURL string
+var PacmanURL []string
+var PacmanIog []string
 var InfluxURL string
 var InfluxOrg string
 var InfluxBucket string
@@ -22,37 +25,30 @@ var cmd = cobra.Command{
 	Run: run,
 }
 
-func run(cmd *cobra.Command, args []string) {
+func run_single(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
+
+	defer wg.Done()
+
 	monitor := NewMonitor()
 	monitor10s := NewMonitor10s()
-
-	// ctx := zmq.Context{}
 
 	socket, err := zmq.NewSocket(zmq.SUB)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// socket.SetLinger(1000)
-	// socket.SetRcvtimeo(1000 * 11)
-	// socket.SetSndtimeo(1000 * 11)
 	socket.SetSubscribe("")
-	socket.Connect(PacmanURL)
-
-	// poller := zmq.Poller{}
-	// poller.Add(socket, zmq.POLLIN)
+	socket.Connect(singlePacmanURL)
 
 	writeAPI := getWriteAPI(InfluxURL, InfluxOrg, InfluxBucket)
 	last := time.Now()
 	last10s := time.Now()
 
 	for {
-		// poller.Poll(10000)
+
 		raw, err := socket.Recv(0)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		// fmt.Printf("yo %d %x\n", len(raw), raw)
 
 		r := bytes.NewReader([]byte(raw))
 		msg := Msg{}
@@ -61,13 +57,9 @@ func run(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 
-		// fmt.Println(msg)
-		// fmt.Println(msg.Header)
-		// fmt.Println(header.MsgTypeTag, header.Timestamp, header.NumWords)
-
 		for _, word := range msg.Words {
-			monitor.ProcessWord(word)
-			monitor10s.ProcessWord(word)
+			monitor.ProcessWord(word, ioGroup)
+			monitor10s.ProcessWord(word, ioGroup)
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
@@ -77,16 +69,37 @@ func run(cmd *cobra.Command, args []string) {
 		}
 
 		if time.Now().Sub(last10s).Seconds() > 10 {
-			monitor10s.WriteToInflux(writeAPI, time.Now().Sub(last).Seconds())
+			monitor10s.WriteToInflux(writeAPI, time.Now().Sub(last10s).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = time.Now()
 		}
 	}
 }
 
+func run(cmd *cobra.Command, args []string) {
+
+	var wg sync.WaitGroup
+
+	wg.Add(len(PacmanURL))
+
+	for iPacman := 0; iPacman < len(PacmanURL); iPacman++ {
+		
+		ioGroup, err := strconv.ParseUint(PacmanIog[iPacman], 10, 8)
+		if err != nil {
+			panic(err)
+		}
+		
+		go run_single(PacmanURL[iPacman], uint8(ioGroup), &wg)
+	}
+
+	wg.Wait()
+}
+
 func main() {
-	cmd.PersistentFlags().StringVar(&PacmanURL, "pacman-url", "tcp://pacman32.local:5556",
-		"PACMAN data server URL")
+	cmd.PersistentFlags().StringSliceVar(&PacmanURL, "pacman-url", nil,
+		"Comma-separated list of PACMAN data server URLs")
+	cmd.PersistentFlags().StringSliceVar(&PacmanIog, "pacman-iog", nil,
+		"Comma-separated list of corresponding IO groups")
 	cmd.PersistentFlags().StringVar(&InfluxURL, "influx-url", "http://localhost:18086",
 		"InfluxDB URL")
 	cmd.PersistentFlags().StringVar(&InfluxOrg, "influx-org", "lbl-neutrino",

@@ -20,9 +20,15 @@ type ConfigStatusCounts struct {
 type FifoFlag uint8
 
 type Channel struct {
+	IoGroup uint8
 	IoChannel IoChannel
 	ChipID uint8
 	ChannelID uint8
+}
+
+type IoChannelKey struct {
+	IoGroup uint8
+	IoChannel IoChannel
 }
 
 type FifoFlagCounts struct {
@@ -43,8 +49,8 @@ const (
 
 type Monitor struct {
 	WordTypeCounts map[WordType]uint
-	DataStatusCounts map[IoChannel]DataStatusCounts
-	ConfigStatusCounts map[IoChannel]ConfigStatusCounts
+	DataStatusCounts map[IoChannelKey]DataStatusCounts
+	ConfigStatusCounts map[IoChannelKey]ConfigStatusCounts
 	FifoFlagCounts map[Channel]FifoFlagCounts
 }
 
@@ -65,8 +71,8 @@ type Monitor10s struct {
 func NewMonitor() *Monitor {
 	return &Monitor{
 		WordTypeCounts: make(map[WordType]uint),
-		DataStatusCounts: make(map[IoChannel]DataStatusCounts),
-		ConfigStatusCounts: make(map[IoChannel]ConfigStatusCounts),
+		DataStatusCounts: make(map[IoChannelKey]DataStatusCounts),
+		ConfigStatusCounts: make(map[IoChannelKey]ConfigStatusCounts),
 		FifoFlagCounts: make(map[Channel]FifoFlagCounts),
 	}
 }
@@ -81,15 +87,15 @@ func NewMonitor10s() *Monitor10s {
 	}
 }
 
-func (m *Monitor) ProcessWord(word Word) {
+func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 	m.RecordType(word)
-	m.RecordStatuses(word)
-	m.RecordFifoFlags(word)
+	m.RecordStatuses(word, ioGroup)
+	m.RecordFifoFlags(word, ioGroup)
 }
 
-func (m10s *Monitor10s) ProcessWord(word Word) {
-	m10s.RecordStatuses(word)
-	m10s.RecordADC(word)
+func (m10s *Monitor10s) ProcessWord(word Word, ioGroup uint8) {
+	m10s.RecordStatuses(word, ioGroup)
+	m10s.RecordADC(word, ioGroup)
 }
 
 func (m *Monitor) RecordType(word Word) {
@@ -101,20 +107,23 @@ func (m *Monitor) RecordType(word Word) {
 	m.WordTypeCounts[newWordType]++
 }
 
-func (m *Monitor) RecordStatuses(word Word) {
+func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
 	if word.Type != WordTypeData {
 		return
 	}
 
 	pacData := word.PacData()
 
-	ioChannel := pacData.IoChannel
+	var ioChannelKey IoChannelKey
+	ioChannelKey.IoChannel = pacData.IoChannel
+	ioChannelKey.IoGroup = ioGroup
+
 
 	var dataStatuses DataStatusCounts
 	var configStatuses ConfigStatusCounts
 	// Initialize with current values in monitor
-	dataStatuses = m.DataStatusCounts[ioChannel]
-	configStatuses = m.ConfigStatusCounts[ioChannel]
+	dataStatuses = m.DataStatusCounts[ioChannelKey]
+	configStatuses = m.ConfigStatusCounts[ioChannelKey]
 
 	packet := pacData.Packet
 	isConfigRead := packet.Type() == PacketTypeRead
@@ -150,12 +159,12 @@ func (m *Monitor) RecordStatuses(word Word) {
 	}
 
 	// Update monitor
-	m.DataStatusCounts[ioChannel] = dataStatuses
-	m.ConfigStatusCounts[ioChannel] = configStatuses
+	m.DataStatusCounts[ioChannelKey] = dataStatuses
+	m.ConfigStatusCounts[ioChannelKey] = configStatuses
 
 }
 
-func (m *Monitor) RecordFifoFlags(word Word) {
+func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -163,6 +172,7 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 	pacData := word.PacData()
 	packet := pacData.Packet
 	var channel Channel
+	channel.IoGroup = ioGroup
 	channel.IoChannel = pacData.IoChannel
 	channel.ChipID = packet.Chip()
 	channel.ChannelID = packet.Channel()
@@ -194,7 +204,7 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 	
 }
 
-func (m10s *Monitor10s) RecordStatuses(word Word) {
+func (m10s *Monitor10s) RecordStatuses(word Word, ioGroup uint8) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -203,6 +213,7 @@ func (m10s *Monitor10s) RecordStatuses(word Word) {
 	packet := pacData.Packet
 
 	var channel Channel
+	channel.IoGroup = ioGroup
 	channel.IoChannel = pacData.IoChannel
 	channel.ChipID = packet.Chip()
 	channel.ChannelID = packet.Channel()
@@ -252,7 +263,7 @@ func (m10s *Monitor10s) RecordStatuses(word Word) {
 
 }
 
-func (m10s *Monitor10s) RecordADC(word Word) {
+func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -260,6 +271,7 @@ func (m10s *Monitor10s) RecordADC(word Word) {
 	pacData := word.PacData()
 	packet := pacData.Packet
 	var channel Channel
+	channel.IoGroup = ioGroup
 	channel.IoChannel = pacData.IoChannel
 	channel.ChipID = packet.Chip()
 	channel.ChannelID = packet.Channel()

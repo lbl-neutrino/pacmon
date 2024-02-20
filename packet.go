@@ -1,5 +1,9 @@
 package main
 
+import (
+	"math/bits"
+)
+
 type Packet [8]byte
 
 type PacketType uint8
@@ -59,5 +63,5 @@ func (p Packet) ParityBit() uint8 {
 }
 
 func (p Packet) ValidParity() bool {
-	return Parity64(p) == 1
+	return (1 - (bits.OnesCount64(uint64(p[7]))%2)) == int(p.ParityBit())
 }

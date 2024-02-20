@@ -1,8 +1,7 @@
 # pacmon: The PACMAN Monitor
 
 `pacmon` subscribes via ZeroMQ to the data and command servers of one or more
-PACMAN cards. (Actually, at the moment, just the data server, and just one
-PACMAN.) Various data quality metrics are calculated from these streams and
+PACMAN cards. Various data quality metrics are calculated from these streams and
 loaded into an InfluxDB for further display using e.g. Grafana.
 
 ## Setup
@@ -46,7 +45,17 @@ export INFLUXDB_TOKEN=...
 where `...` should be replaced by your InfluxDB API token.
 
 The connection parameters (for PACMAN and InfluxDB) can be controlled via
-command-line options. Run `./pacmon --help` for a full list of options.
+command-line options. Run `./pacmon --help` for a full list of options. To 
+specify multiple PACMAN boards, use the command-line options `--pacman-url` 
+and `--pacman-iog` to specify the the connection parameters for PACMAN cards 
+and the corresponding IO group. For instance:
+
+``` bash
+./pacmon \
+    --pacman-url "tcp://pacman35.local:5556,tcp://pacman22.local:5556" \
+    --pacman-iog "1,2"
+```
+
 
 ## Existing metrics
 

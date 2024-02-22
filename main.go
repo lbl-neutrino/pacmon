@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	cobra "github.com/spf13/cobra"
-	zmq "github.com/pebbe/zmq4/draft"
+	zmq "github.com/pebbe/zmq4"
 )
 
 var PacmanURL []string

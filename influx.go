@@ -12,13 +12,13 @@ import (
 	write "github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
-func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64) {
+func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
 	// TODO Set tile_id properly
 	tile_id := 1
 	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
 
 	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, time.Now())
+		return influxdb2.NewPoint(name, tags, nil, timeNow)
 	}
 
 	point := makePoint("word_types_rates")
@@ -96,13 +96,13 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 
 }
 
-func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64) {
+func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
 	// TODO Set tile_id properly
 	tile_id := 1
 	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
 
 	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, time.Now())
+		return influxdb2.NewPoint(name, tags, nil, timeNow)
 	}
 
 	point := makePoint("packet_adc_total")

@@ -42,7 +42,6 @@ func run_single(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
 	writeAPI := getWriteAPI(InfluxURL, InfluxOrg, InfluxBucket)
 	last := time.Now()
 	last10s := time.Now()
-
 	for {
 
 		raw, err := socket.Recv(0)
@@ -63,15 +62,15 @@ func run_single(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
-			monitor.WriteToInflux(writeAPI, time.Now().Sub(last).Seconds())
-			monitor = NewMonitor() // Reset monitor
 			last = time.Now()
+			monitor.WriteToInflux(writeAPI, last, time.Now().Sub(last).Seconds())
+			monitor = NewMonitor() // Reset monitor
 		}
 
 		if time.Now().Sub(last10s).Seconds() > 10 {
-			monitor10s.WriteToInflux(writeAPI, time.Now().Sub(last10s).Seconds())
-			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = time.Now()
+			monitor10s.WriteToInflux(writeAPI, last10s, time.Now().Sub(last10s).Seconds())
+			monitor10s = NewMonitor10s() // Reset monitor
 		}
 	}
 }

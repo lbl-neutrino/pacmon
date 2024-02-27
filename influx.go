@@ -12,13 +12,14 @@ import (
 	write "github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
+func IoChannelToTileId(ioChannel int) int{
+	return (ioChannel - 1)/4 + 1
+}
+
 func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
-	// TODO Set tile_id properly
-	tile_id := 1
-	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
 
 	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, timeNow)
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
 
 	point := makePoint("word_types_rates")
@@ -31,6 +32,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point = makePoint("data_statuses_rates")
 
 		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(ioChannel.IoChannel))))
 		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
 		
 		point.AddField("total", float64(counts.Total)/timeDiff)
@@ -45,6 +47,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point = makePoint("config_statuses_rates")
 
 		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(ioChannel.IoChannel))))
 		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
 		
 		point.AddField("total", float64(counts.Total)/timeDiff)
@@ -65,6 +68,8 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point = makePoint("local_fifo_statuses")
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
@@ -84,6 +89,8 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point = makePoint("shared_fifo_statuses")
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 
 		point.AddField("less_half_full", float64(counts.SharedFifoLessHalfFull)/total)
@@ -116,6 +123,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
@@ -131,6 +139,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
@@ -148,6 +157,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	// "fmt"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -25,12 +25,14 @@ var cmd = cobra.Command{
 	Run: run,
 }
 
-func run_single(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
+func runSingle(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
 
 	defer wg.Done()
 
 	monitor := NewMonitor()
 	monitor10s := NewMonitor10s()
+	syncMonitor := NewSyncMonitor()
+	trigMonitor := NewTrigMonitor()
 
 	socket, err := zmq.NewSocket(zmq.SUB)
 	if err != nil {
@@ -58,9 +60,25 @@ func run_single(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
 			log.Fatal(err)
 		}
 
+		msgTime := msg.Header.Timestamp
+
 		for _, word := range msg.Words {
 			monitor.ProcessWord(word, ioGroup)
 			monitor10s.ProcessWord(word, ioGroup)
+			syncMonitor.ProcessWord(word, ioGroup)
+			trigMonitor.ProcessWord(word, ioGroup)
+		}
+
+		if len(syncMonitor.Time) > 0 {
+			syncMonitor.WriteToInflux(writeAPI, time.Unix(int64(msgTime), 0))
+			fmt.Println(time.Now())
+			fmt.Println(syncMonitor)
+			syncMonitor = NewSyncMonitor()
+		}
+
+		if len(trigMonitor.Time) > 0 {
+			trigMonitor.WriteToInflux(writeAPI, time.Unix(int64(msgTime), 0))
+			trigMonitor = NewTrigMonitor()
 		}
 
 		if time.Now().Sub(last).Seconds() > 1 {
@@ -92,7 +110,7 @@ func run(cmd *cobra.Command, args []string) {
 			panic(err)
 		}
 		
-		go run_single(PacmanURL[iPacman], uint8(ioGroup), &wg)
+		go runSingle(PacmanURL[iPacman], uint8(ioGroup), &wg)
 	}
 
 	wg.Wait()

@@ -174,6 +174,47 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 
 }
 
+func (sm *SyncMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time) {
+
+	makePoint := func (name string) *write.Point {
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
+	}
+
+	for ind, t := range sm.Time {
+		point := makePoint("sync")
+
+		point.AddTag("io_group", strconv.Itoa(int(sm.IoGroup[ind])))
+
+		if sm.Type[ind] == SyncTypeSync { 
+			point.AddField("sync", float64(t))
+		}
+		if sm.Type[ind] == SyncTypeHeartbeat { 
+			point.AddField("heartbeat", float64(t))
+		}
+		if sm.Type[ind] == SyncTypeClkSource { 
+			point.AddField("clk_source", float64(t))
+		}
+		writeAPI.WritePoint(context.Background(), point)
+	}
+}
+
+func (tm *TrigMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time) {
+
+	makePoint := func (name string) *write.Point {
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
+	}
+
+	for ind, t := range tm.Time {
+		point := makePoint("trigger")
+
+		point.AddTag("io_group", strconv.Itoa(int(tm.IoGroup[ind])))
+
+		point.AddField("trig", float64(t))
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+}
+
 func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {
 	token := os.Getenv("INFLUXDB_TOKEN")
 	if token == "" {

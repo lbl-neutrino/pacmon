@@ -28,6 +28,15 @@ const (
 	WordTypeError WordType = 'E'
 )
 
+type SyncType byte
+
+const (
+	SyncTypeSync SyncType = 'S'
+	SyncTypeHeartbeat SyncType = 'H'
+	SyncTypeClkSource SyncType = 'C'
+)
+
+
 func (wt WordType) String() string {
 	switch wt {
 	case WordTypeData: return "Data"
@@ -64,9 +73,9 @@ type PacTrig struct {
 }
 
 type PacSync struct {
-	Type uint8
-	ClkSource uint8
-	_ [8]byte
+	Type SyncType
+	_ [2]byte
+	Timestamp uint32
 }
 
 type PacPing struct {

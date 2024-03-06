@@ -68,6 +68,17 @@ type Monitor10s struct {
 	ConfigStatusCountsPerChannel map[Channel]ConfigStatusCounts
 }
 
+type SyncMonitor struct {
+	IoGroup []uint8
+	Time []uint32
+	Type []SyncType
+}
+
+type TrigMonitor struct {
+	IoGroup []uint8
+	Time []uint32
+}
+
 func NewMonitor() *Monitor {
 	return &Monitor{
 		WordTypeCounts: make(map[WordType]uint),
@@ -87,6 +98,16 @@ func NewMonitor10s() *Monitor10s {
 	}
 }
 
+func NewSyncMonitor() *SyncMonitor {
+	return &SyncMonitor{
+	}
+}
+
+func NewTrigMonitor() *TrigMonitor {
+	return &TrigMonitor{
+	}
+}
+
 func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 	m.RecordType(word)
 	m.RecordStatuses(word, ioGroup)
@@ -96,6 +117,14 @@ func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 func (m10s *Monitor10s) ProcessWord(word Word, ioGroup uint8) {
 	m10s.RecordStatuses(word, ioGroup)
 	m10s.RecordADC(word, ioGroup)
+}
+
+func (sm *SyncMonitor) ProcessWord(word Word, ioGroup uint8) {
+	sm.RecordSync(word, ioGroup)
+}
+
+func (tm *TrigMonitor) ProcessWord(word Word, ioGroup uint8) {
+	tm.RecordTrig(word, ioGroup)
 }
 
 func (m *Monitor) RecordType(word Word) {
@@ -284,4 +313,19 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] = UpdateMeanRMS(m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel], m10s.NPacketsPerChannel[channel], adc)
 	m10s.NPacketsPerChannel[channel]++
 
+}
+
+func (sm *SyncMonitor) RecordSync(word Word, ioGroup uint8) {
+	if word.Type == WordTypeSync {
+		sm.Time = append(sm.Time, word.PacSync().Timestamp)
+		sm.IoGroup = append(sm.IoGroup, ioGroup)
+		sm.Type = append(sm.Type, word.PacSync().Type)
+	}
+}
+
+func (tm *TrigMonitor) RecordTrig(word Word, ioGroup uint8) {
+	if word.Type == WordTypeTrig {
+		tm.Time = append(tm.Time, word.PacTrig().Timestamp)
+		tm.IoGroup = append(tm.IoGroup, ioGroup)
+	}
 }

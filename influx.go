@@ -186,7 +186,7 @@ func (sm *SyncMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time
 		point.AddTag("io_group", strconv.Itoa(int(sm.IoGroup[ind])))
 
 		if sm.Type[ind] == SyncTypeSync { 
-			point.AddField("sync", float64(t))
+			point.AddField("sync", (float64(t) - 1e7) * 0.1) 
 		}
 		if sm.Type[ind] == SyncTypeHeartbeat { 
 			point.AddField("heartbeat", float64(t))

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
+	// "fmt"
 	"log"
 	"os"
 	"time"
@@ -71,8 +71,6 @@ func runSingle(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
 
 		if len(syncMonitor.Time) > 0 {
 			syncMonitor.WriteToInflux(writeAPI, time.Unix(int64(msgTime), 0))
-			fmt.Println(time.Now())
-			fmt.Println(syncMonitor)
 			syncMonitor = NewSyncMonitor()
 		}
 

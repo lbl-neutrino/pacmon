@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/bits"
+	//"fmt"
 )
 
 type Packet [8]byte
@@ -63,5 +64,13 @@ func (p Packet) ParityBit() uint8 {
 }
 
 func (p Packet) ValidParity() bool {
-	return (1 - (bits.OnesCount64(uint64(p[7]))%2)) == int(p.ParityBit())
+	onesCount := 0
+	for i, b := range p {
+		if i == 7 {
+			onesCount = onesCount + bits.OnesCount(uint(b & 0x7F)) // Skip parity bit
+		} else {
+			onesCount = onesCount + bits.OnesCount(uint(b))
+		}
+	}
+	return (1 - (onesCount % 2)) == int(p.ParityBit())
 }

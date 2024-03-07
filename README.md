@@ -57,7 +57,7 @@ and the corresponding IO group. For instance:
 ```
 
 
-If a JSON IO configuration file is available, containing the mapping between 
+If a [JSON IO configuration file](https://github.com/larpix/crs_daq/blob/master/io/pacman.json) is available, containing the mapping between 
 pacman addresses and IO groups, it can simply be provided with the command-line 
 option `--pacman-config` (instead of `--pacman-url` and `--pacman-iog`): 
 

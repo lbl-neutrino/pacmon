@@ -57,6 +57,14 @@ and the corresponding IO group. For instance:
 ```
 
 
+If a JSON IO configuration file is available, containing the mapping between 
+pacman addresses and IO groups, it can simply be provided with the command-line 
+option `--pacman-config` (instead of `--pacman-url` and `--pacman-iog`): 
+
+``` bash
+./pacmon --pacman-config path/to/crs_daq/io/pacman.json
+```
+
 ## Existing metrics
 
 Currently `pacmon` writes the same set of metrics displayed by Kevin's original

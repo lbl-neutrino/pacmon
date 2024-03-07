@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
-	// "fmt"
+	"fmt"
 	"log"
 	"os"
 	"time"
 	"sync"
+	"io/ioutil"
 	"strconv"
+    "encoding/json"
 
 	cobra "github.com/spf13/cobra"
 	zmq "github.com/pebbe/zmq4"
@@ -15,6 +17,7 @@ import (
 
 var PacmanURL []string
 var PacmanIog []string
+var PacmanIoJson string
 var InfluxURL string
 var InfluxOrg string
 var InfluxBucket string
@@ -23,6 +26,11 @@ var cmd = cobra.Command{
 	Use: "pacmon",
 	Short: "PACMAN monitor",
 	Run: run,
+}
+
+
+type IoConfig struct {
+	IoGroupPacmanURL [][]interface{} `json:"io_group"`
 }
 
 func runSingle(singlePacmanURL string, ioGroup uint8, wg *sync.WaitGroup){
@@ -99,6 +107,32 @@ func run(cmd *cobra.Command, args []string) {
 
 	var wg sync.WaitGroup
 
+    content, err := ioutil.ReadFile(PacmanIoJson)
+	if err == nil {
+        fmt.Println("Reading IO config from JSON file...")
+		var config IoConfig
+
+		err = json.Unmarshal([]byte(content), &config)
+		if err != nil {
+			fmt.Println("JSON decode error:", err)
+			return
+		}
+
+		PacmanURL = nil
+		PacmanIog = nil
+		for _, iog := range config.IoGroupPacmanURL {
+			PacmanURL = append(PacmanURL, fmt.Sprintf("tcp://%s:5556", iog[1].(string)))
+			PacmanIog = append(PacmanIog, strconv.Itoa(int(iog[0].(float64))))
+		}
+
+		fmt.Println("Read URLs: ", PacmanURL)
+		fmt.Println("Corresponding to IO groups: ", PacmanIog)
+
+	} else {
+		fmt.Println("Error when opening configuration file: ", err)
+		fmt.Println("Using --pacman-url and --pacman-iog options")
+    }
+
 	wg.Add(len(PacmanURL))
 
 	for iPacman := 0; iPacman < len(PacmanURL); iPacman++ {
@@ -125,6 +159,8 @@ func main() {
 		"InfluxDB organization")
 	cmd.PersistentFlags().StringVar(&InfluxBucket, "influx-bucket", "pacmon-test",
 		"InfluxDB bucket")
+	cmd.PersistentFlags().StringVar(&PacmanIoJson, "pacman-config", "",
+		"JSON configuration file of the IO instead of --pacman-url and --pacman-iog")
 
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)

@@ -59,6 +59,39 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		writeAPI.WritePoint(context.Background(), point)
 	}
 
+	for chip, counts := range m.DataStatusCountsPerChip {
+		point = makePoint("data_statuses_rates_per_chip")
+
+		point.AddTag("io_group", strconv.Itoa(int(chip.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(chip.IoChannel))))
+		point.AddTag("io_channel", strconv.Itoa(int(chip.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(chip.ChipID)))
+		
+		point.AddField("total", float64(counts.Total)/timeDiff)
+		point.AddField("valid_parity", float64(counts.ValidParity)/timeDiff)
+		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
+		point.AddField("downstream", float64(counts.Downstream)/timeDiff)
+		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
+	for chip, counts := range m.ConfigStatusCountsPerChip {
+		point = makePoint("config_statuses_rates_per_chip")
+
+		point.AddTag("io_group", strconv.Itoa(int(chip.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(chip.IoChannel))))
+		point.AddTag("io_channel", strconv.Itoa(int(chip.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(chip.ChipID)))
+		
+		point.AddField("total", float64(counts.Total)/timeDiff)
+		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
+		point.AddField("downstream_read", float64(counts.DownstreamRead)/timeDiff)
+		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
+		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
+		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
 	for channel, counts := range m.FifoFlagCounts {
 		total := float64(counts.LocalFifoLessHalfFull + counts.LocalFifoMoreHalfFull + counts.LocalFifoFull)
 		if total == 0 {
@@ -104,12 +137,9 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 }
 
 func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
-	// TODO Set tile_id properly
-	tile_id := 1
-	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
 
 	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, timeNow)
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
 
 	point := makePoint("packet_adc_total")
@@ -130,6 +160,21 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 		point.AddField("adc_mean", adc)
 		point.AddField("adc_rms", m10s.ADCRMSPerChannel[channel])
 		point.AddField("n_packets", m10s.NPacketsPerChannel[channel])
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
+	for chip, adc := range m10s.ADCMeanPerChip {
+		point = makePoint("packet_adc_per_chip")
+
+		point.AddTag("io_group", strconv.Itoa(int(chip.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(chip.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(chip.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(chip.ChipID)))
+
+		point.AddField("adc_mean", adc)
+		point.AddField("adc_rms", m10s.ADCRMSPerChip[chip])
+		point.AddField("n_packets", m10s.NPacketsPerChip[chip])
 
 		writeAPI.WritePoint(context.Background(), point)
 	}

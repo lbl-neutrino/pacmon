@@ -19,11 +19,17 @@ type ConfigStatusCounts struct {
 
 type FifoFlag uint8
 
-type Channel struct {
+type ChannelKey struct {
 	IoGroup uint8
 	IoChannel IoChannel
 	ChipID uint8
 	ChannelID uint8
+}
+
+type ChipKey struct {
+	IoGroup uint8
+	IoChannel IoChannel
+	ChipID uint8
 }
 
 type IoChannelKey struct {
@@ -49,23 +55,32 @@ const (
 
 type Monitor struct {
 	WordTypeCounts map[WordType]uint
+
 	DataStatusCounts map[IoChannelKey]DataStatusCounts
+	DataStatusCountsPerChip map[ChipKey]DataStatusCounts
+
 	ConfigStatusCounts map[IoChannelKey]ConfigStatusCounts
-	FifoFlagCounts map[Channel]FifoFlagCounts
+	ConfigStatusCountsPerChip map[ChipKey]ConfigStatusCounts
+
+	FifoFlagCounts map[ChannelKey]FifoFlagCounts
 }
 
 type Monitor10s struct {
 	ADCMeanTotal float64
 	ADCRMSTotal float64
 
-	ADCMeanPerChannel map[Channel]float64
-	ADCRMSPerChannel map[Channel]float64
+	ADCMeanPerChip map[ChipKey]float64
+	ADCRMSPerChip map[ChipKey]float64
+
+	ADCMeanPerChannel map[ChannelKey]float64
+	ADCRMSPerChannel map[ChannelKey]float64
 
 	NPacketsTotal uint32
-	NPacketsPerChannel map[Channel]uint32
+	NPacketsPerChip map[ChipKey]uint32
+	NPacketsPerChannel map[ChannelKey]uint32
 
-	DataStatusCountsPerChannel map[Channel]DataStatusCounts
-	ConfigStatusCountsPerChannel map[Channel]ConfigStatusCounts
+	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
+	ConfigStatusCountsPerChannel map[ChannelKey]ConfigStatusCounts
 }
 
 type SyncMonitor struct {
@@ -83,18 +98,23 @@ func NewMonitor() *Monitor {
 	return &Monitor{
 		WordTypeCounts: make(map[WordType]uint),
 		DataStatusCounts: make(map[IoChannelKey]DataStatusCounts),
+		DataStatusCountsPerChip: make(map[ChipKey]DataStatusCounts),
 		ConfigStatusCounts: make(map[IoChannelKey]ConfigStatusCounts),
-		FifoFlagCounts: make(map[Channel]FifoFlagCounts),
+		ConfigStatusCountsPerChip: make(map[ChipKey]ConfigStatusCounts),
+		FifoFlagCounts: make(map[ChannelKey]FifoFlagCounts),
 	}
 }
 
 func NewMonitor10s() *Monitor10s {
 	return &Monitor10s{
-		ADCMeanPerChannel: make(map[Channel]float64),
-		ADCRMSPerChannel: make(map[Channel]float64),
-		NPacketsPerChannel: make(map[Channel]uint32),
-		DataStatusCountsPerChannel: make(map[Channel]DataStatusCounts),
-		ConfigStatusCountsPerChannel: make(map[Channel]ConfigStatusCounts),
+		ADCMeanPerChip: make(map[ChipKey]float64),
+		ADCRMSPerChip: make(map[ChipKey]float64),
+		NPacketsPerChip: make(map[ChipKey]uint32),
+		ADCMeanPerChannel: make(map[ChannelKey]float64),
+		ADCRMSPerChannel: make(map[ChannelKey]float64),
+		NPacketsPerChannel: make(map[ChannelKey]uint32),
+		DataStatusCountsPerChannel: make(map[ChannelKey]DataStatusCounts),
+		ConfigStatusCountsPerChannel: make(map[ChannelKey]ConfigStatusCounts),
 	}
 }
 
@@ -142,11 +162,16 @@ func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
 	}
 
 	pacData := word.PacData()
+	packet := pacData.Packet
 
 	var ioChannelKey IoChannelKey
-	ioChannelKey.IoChannel = pacData.IoChannel
 	ioChannelKey.IoGroup = ioGroup
+	ioChannelKey.IoChannel = pacData.IoChannel
 
+	var chipKey ChipKey
+	chipKey.IoGroup = ioGroup
+	chipKey.IoChannel = pacData.IoChannel
+	chipKey.ChipID = packet.Chip()
 
 	var dataStatuses DataStatusCounts
 	var configStatuses ConfigStatusCounts
@@ -154,7 +179,6 @@ func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
 	dataStatuses = m.DataStatusCounts[ioChannelKey]
 	configStatuses = m.ConfigStatusCounts[ioChannelKey]
 
-	packet := pacData.Packet
 	isConfigRead := packet.Type() == PacketTypeRead
 	isConfigWrite := packet.Type() == PacketTypeWrite
 	isConfig := isConfigRead || isConfigWrite
@@ -188,8 +212,12 @@ func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
 	}
 
 	// Update monitor
+
 	m.DataStatusCounts[ioChannelKey] = dataStatuses
 	m.ConfigStatusCounts[ioChannelKey] = configStatuses
+
+	m.DataStatusCountsPerChip[chipKey] = dataStatuses
+	m.ConfigStatusCountsPerChip[chipKey] = configStatuses
 
 }
 
@@ -200,7 +228,7 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 
 	pacData := word.PacData()
 	packet := pacData.Packet
-	var channel Channel
+	var channel ChannelKey
 	channel.IoGroup = ioGroup
 	channel.IoChannel = pacData.IoChannel
 	channel.ChipID = packet.Chip()
@@ -241,7 +269,7 @@ func (m10s *Monitor10s) RecordStatuses(word Word, ioGroup uint8) {
 	pacData := word.PacData()
 	packet := pacData.Packet
 
-	var channel Channel
+	var channel ChannelKey
 	channel.IoGroup = ioGroup
 	channel.IoChannel = pacData.IoChannel
 	channel.ChipID = packet.Chip()
@@ -299,16 +327,25 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 
 	pacData := word.PacData()
 	packet := pacData.Packet
-	var channel Channel
+	
+	var channel ChannelKey
 	channel.IoGroup = ioGroup
 	channel.IoChannel = pacData.IoChannel
 	channel.ChipID = packet.Chip()
 	channel.ChannelID = packet.Channel()
+	
+	var chip ChipKey
+	chip.IoGroup = ioGroup
+	chip.IoChannel = pacData.IoChannel
+	chip.ChipID = packet.Chip()
 
 	adc := float64(packet.Data())
 
 	m10s.ADCMeanTotal, m10s.ADCRMSTotal = UpdateMeanRMS(m10s.ADCMeanTotal, m10s.ADCRMSTotal, m10s.NPacketsTotal, adc)
 	m10s.NPacketsTotal++
+
+	m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip] = UpdateMeanRMS(m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip], m10s.NPacketsPerChip[chip], adc)
+	m10s.NPacketsPerChip[chip]++
 
 	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] = UpdateMeanRMS(m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel], m10s.NPacketsPerChannel[channel], adc)
 	m10s.NPacketsPerChannel[channel]++

@@ -12,13 +12,14 @@ import (
 	write "github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
-func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64) {
-	// TODO Set tile_id properly
-	tile_id := 1
-	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
+func IoChannelToTileId(ioChannel int) int{
+	return (ioChannel - 1)/4 + 1
+}
+
+func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
 
 	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, time.Now())
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
 
 	point := makePoint("word_types_rates")
@@ -29,7 +30,11 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 
 	for ioChannel, counts := range m.DataStatusCounts {
 		point = makePoint("data_statuses_rates")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
+
+		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(ioChannel.IoChannel))))
+		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
+		
 		point.AddField("total", float64(counts.Total)/timeDiff)
 		point.AddField("valid_parity", float64(counts.ValidParity)/timeDiff)
 		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
@@ -40,7 +45,11 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 
 	for ioChannel, counts := range m.ConfigStatusCounts {
 		point = makePoint("config_statuses_rates")
-		point.AddTag("io_channel", strconv.Itoa(int(ioChannel)))
+
+		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(ioChannel.IoChannel))))
+		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
+		
 		point.AddField("total", float64(counts.Total)/timeDiff)
 		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
 		point.AddField("downstream_read", float64(counts.DownstreamRead)/timeDiff)
@@ -51,31 +60,56 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64)
 	}
 
 	for channel, counts := range m.FifoFlagCounts {
-		point = makePoint("fifo_flags")
+		total := float64(counts.LocalFifoLessHalfFull + counts.LocalFifoMoreHalfFull + counts.LocalFifoFull)
+		if total == 0 {
+			continue
+		}
+
+		point = makePoint("local_fifo_statuses")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-		point.AddField("local_fifo_less_half_full", counts.LocalFifoLessHalfFull)
-		point.AddField("local_fifo_more_half_full", counts.LocalFifoMoreHalfFull)
-		point.AddField("local_fifo_full", counts.LocalFifoFull)
-
-		point.AddField("shared_fifo_less_half_full", counts.SharedFifoLessHalfFull)
-		point.AddField("shared_fifo_more_half_full", counts.SharedFifoMoreHalfFull)
-		point.AddField("shared_fifo_full", counts.SharedFifoFull)
+		point.AddField("less_half_full", float64(counts.LocalFifoLessHalfFull)/total)
+		point.AddField("more_half_full", float64(counts.LocalFifoMoreHalfFull)/total)
+		point.AddField("full", float64(counts.LocalFifoFull)/total)
 
 		writeAPI.WritePoint(context.Background(), point)
 	}
 
+	for channel, counts := range m.FifoFlagCounts {
+		total := float64(counts.SharedFifoLessHalfFull + counts.SharedFifoMoreHalfFull + counts.SharedFifoFull)
+		if total == 0 {
+			continue
+		}
+
+		point = makePoint("shared_fifo_statuses")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+
+		point.AddField("less_half_full", float64(counts.SharedFifoLessHalfFull)/total)
+		point.AddField("more_half_full", float64(counts.SharedFifoMoreHalfFull)/total)
+		point.AddField("full", float64(counts.SharedFifoFull)/total)
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
+
+
 }
 
-func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff float64) {
+func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
 	// TODO Set tile_id properly
 	tile_id := 1
 	tags := map[string]string{"tile_id": strconv.Itoa(tile_id)}
 
 	makePoint := func (name string) *write.Point {
-		return influxdb2.NewPoint(name, tags, nil, time.Now())
+		return influxdb2.NewPoint(name, tags, nil, timeNow)
 	}
 
 	point := makePoint("packet_adc_total")
@@ -87,7 +121,9 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	for channel, adc := range m10s.ADCMeanPerChannel {
 		point = makePoint("packet_adc_per_channel")
 
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
@@ -101,7 +137,9 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	for channel, counts := range m10s.DataStatusCountsPerChannel {
 		point = makePoint("data_statuses_rates_per_channel")
 
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
@@ -117,7 +155,9 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	for channel, counts := range m10s.ConfigStatusCountsPerChannel {
 		point = makePoint("config_statuses_rates_per_channel")
 
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
@@ -132,6 +172,47 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeDiff fl
 	}
 
 
+}
+
+func (sm *SyncMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time) {
+
+	makePoint := func (name string) *write.Point {
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
+	}
+
+	for ind, t := range sm.Time {
+		point := makePoint("sync")
+
+		point.AddTag("io_group", strconv.Itoa(int(sm.IoGroup[ind])))
+
+		if sm.Type[ind] == SyncTypeSync { 
+			point.AddField("sync", (float64(t) - 1e7) * 0.1) 
+		}
+		if sm.Type[ind] == SyncTypeHeartbeat { 
+			point.AddField("heartbeat", float64(t))
+		}
+		if sm.Type[ind] == SyncTypeClkSource { 
+			point.AddField("clk_source", float64(t))
+		}
+		writeAPI.WritePoint(context.Background(), point)
+	}
+}
+
+func (tm *TrigMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time) {
+
+	makePoint := func (name string) *write.Point {
+		return influxdb2.NewPoint(name, nil, nil, timeNow)
+	}
+
+	for ind, t := range tm.Time {
+		point := makePoint("trigger")
+
+		point.AddTag("io_group", strconv.Itoa(int(tm.IoGroup[ind])))
+
+		point.AddField("trig", float64(t))
+
+		writeAPI.WritePoint(context.Background(), point)
+	}
 }
 
 func getWriteAPI(url, org, bucket string) api.WriteAPIBlocking {

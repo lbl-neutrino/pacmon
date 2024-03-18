@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-    "encoding/json"
-	"io/ioutil"
-	"strings"
+	"os"
 	"strconv"
+	"strings"
 )
 
 type XY struct {
@@ -14,25 +14,25 @@ type XY struct {
 }
 
 type ChannelTile struct {
-	IoGroup uint8
-	TileID uint8
-	ChipID uint8
+	IoGroup   uint8
+	TileID    uint8
+	ChipID    uint8
 	ChannelID uint8
 }
 type Geometry struct {
-	Pitch float64
+	Pitch       float64
 	ChannelToXY map[ChannelTile]XY
 }
 
 type GeoConfig struct {
-	Pitch float64 `json:"pixel_pitch"`
+	Pitch    float64               `json:"pixel_pitch"`
 	Geometry map[string][2]float64 `json:"geometry"`
 }
 
 func ReadGeometryFile(path string) GeoConfig {
-    content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err == nil {
-        fmt.Println("Reading geometry config from JSON file...")
+		fmt.Println("Reading geometry config from JSON file...")
 
 		var config GeoConfig
 
@@ -56,7 +56,7 @@ func LoadGeometry(path string) Geometry {
 	geo.ChannelToXY = make(map[ChannelTile]XY)
 
 	for str, pos := range config.Geometry {
-	
+
 		var channel ChannelTile
 		s := strings.Split(str, "-")
 
@@ -71,19 +71,19 @@ func LoadGeometry(path string) Geometry {
 			panic(err)
 		}
 		channel.TileID = uint8(tileID)
-		
+
 		chipID, err := strconv.Atoi(s[2])
 		if err != nil {
 			panic(err)
 		}
 		channel.ChipID = uint8(chipID)
-		
+
 		channelID, err := strconv.Atoi(s[3])
 		if err != nil {
 			panic(err)
 		}
 		channel.ChannelID = uint8(channelID)
-		
+
 		var xy XY
 		xy.X = pos[0]
 		xy.Y = pos[1]
@@ -99,7 +99,6 @@ func LoadGeometry(path string) Geometry {
 
 	// fmt.Println(config.Geometry["1-7-11-63"])
 	// fmt.Println(geo.ChannelToXY[channel])
-	
 
 	return geo
 }

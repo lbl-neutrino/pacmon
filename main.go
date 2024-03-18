@@ -2,17 +2,16 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"time"
-	"sync"
-	"io/ioutil"
 	"strconv"
-    "encoding/json"
+	"sync"
+	"time"
 
-	cobra "github.com/spf13/cobra"
 	zmq "github.com/pebbe/zmq4"
+	cobra "github.com/spf13/cobra"
 )
 
 var PacmanURL []string
@@ -25,17 +24,16 @@ var GeometryFileMod013 string
 var GeometryFileMod2 string
 
 var cmd = cobra.Command{
-	Use: "pacmon",
+	Use:   "pacmon",
 	Short: "PACMAN monitor",
-	Run: run,
+	Run:   run,
 }
-
 
 type IoConfig struct {
 	IoGroupPacmanURL [][]interface{} `json:"io_group"`
 }
 
-func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, wg *sync.WaitGroup){
+func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
@@ -53,14 +51,12 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, wg *syn
 	socket.Connect(singlePacmanURL)
 
 	writeAPI := getWriteAPI(InfluxURL, InfluxOrg, InfluxBucket)
-	// now := time.Now()
-	// last := time.Now()
+	now := time.Now()
+	last := time.Now()
 	now10s := time.Now()
 	now1min := time.Now()
 	last10s := time.Now()
 	last1min := time.Now()
-
-	prevMsgTime := time.Now().Unix()
 
 	for {
 
@@ -82,7 +78,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, wg *syn
 			monitor.ProcessWord(word, ioGroup)
 			monitor10s.ProcessWord(word, ioGroup)
 			monitor1min.ProcessWord(word, ioGroup)
-			
+
 			syncMonitor.ProcessWord(word, ioGroup)
 			trigMonitor.ProcessWord(word, ioGroup)
 		}
@@ -97,34 +93,24 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, wg *syn
 			trigMonitor = NewTrigMonitor()
 		}
 
-		// if time.Now().Sub(last).Seconds() > 1 {
-		if (msgTime - prevMsgTime) > 1 {
-			// now = time.Now()
-			fmt.Println(time.Now(), ": here 1s")
-			// monitor.WriteToInflux(writeAPI, now, now.Sub(last).Seconds())
-			monitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0), float64(msgTime - prevMsgTime))
+		if time.Since(last).Seconds() > 1 {
+			now = time.Now()
+			monitor.WriteToInflux(writeAPI, now, now.Sub(last).Seconds())
 			monitor = NewMonitor() // Reset monitor
-			fmt.Println(time.Now(), ": here 1s - after writing to influx")
-			// last = now
-			prevMsgTime = msgTime
+			last = now
 		}
 
-		if time.Now().Sub(last10s).Seconds() > 10 {
+		if time.Since(last10s).Seconds() > 10 {
 			now10s = time.Now()
-			fmt.Println(time.Now(), ": here 10s")
-
 			monitor10s.WriteToInflux(writeAPI, now10s, now10s.Sub(last10s).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
-			fmt.Println(time.Now(), ": here 10s - after writing to influx")
 			last10s = now10s
 		}
 
-		if time.Now().Sub(last1min).Seconds() > 5 {
+		if time.Since(last1min).Seconds() > 30 {
 			now1min = time.Now()
-			fmt.Println(time.Now(), ": here 1m")
-			monitor1min.PlotMean(geometry)
+			monitor1min.PlotMean(geometry, ioGroup)
 			monitor1min = NewMonitor1min() // Reset monitor
-			fmt.Println(time.Now(), ": here 1m - after writing to influx")
 			last1min = now1min
 		}
 
@@ -135,9 +121,9 @@ func run(cmd *cobra.Command, args []string) {
 
 	var wg sync.WaitGroup
 
-    content, err := ioutil.ReadFile(PacmanIoJson)
+	content, err := os.ReadFile(PacmanIoJson)
 	if err == nil {
-        fmt.Println("Reading IO config from JSON file...")
+		fmt.Println("Reading IO config from JSON file...")
 		var config IoConfig
 
 		err = json.Unmarshal([]byte(content), &config)
@@ -159,21 +145,25 @@ func run(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Println("Error when opening configuration file: ", err)
 		fmt.Println("Using --pacman-url and --pacman-iog options")
-    }
+	}
 
-	geometryMod013 := LoadGeometry(GeometryFileMod013) 
-	// geometryMod2 := LoadGeometry(GeometryFileMod2)
+	geometryMod013 := LoadGeometry(GeometryFileMod013)
+	geometryMod2 := LoadGeometry(GeometryFileMod2)
 
 	wg.Add(len(PacmanURL))
 
 	for iPacman := 0; iPacman < len(PacmanURL); iPacman++ {
-		
+
 		ioGroup, err := strconv.ParseUint(PacmanIog[iPacman], 10, 8)
 		if err != nil {
 			panic(err)
 		}
-		
-		go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, &wg)
+		if ioGroup == 5 || ioGroup == 6 {
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, &wg)
+		} else {
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, &wg)
+		}
+
 	}
 
 	wg.Wait()

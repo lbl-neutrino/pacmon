@@ -83,6 +83,14 @@ type Monitor10s struct {
 	ConfigStatusCountsPerChannel map[ChannelKey]ConfigStatusCounts
 }
 
+type Monitor1min struct {
+	ADCMeanPerChannel map[ChannelKey]float64
+	ADCRMSPerChannel map[ChannelKey]float64
+	NPacketsPerChannel map[ChannelKey]uint32
+	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
+}
+
+
 type SyncMonitor struct {
 	IoGroup []uint8
 	Time []uint32
@@ -117,6 +125,14 @@ func NewMonitor10s() *Monitor10s {
 		ConfigStatusCountsPerChannel: make(map[ChannelKey]ConfigStatusCounts),
 	}
 }
+func NewMonitor1min() *Monitor1min {
+	return &Monitor1min{
+		ADCMeanPerChannel: make(map[ChannelKey]float64),
+		ADCRMSPerChannel: make(map[ChannelKey]float64),
+		NPacketsPerChannel: make(map[ChannelKey]uint32),
+		DataStatusCountsPerChannel: make(map[ChannelKey]DataStatusCounts),
+	}
+}
 
 func NewSyncMonitor() *SyncMonitor {
 	return &SyncMonitor{
@@ -137,6 +153,11 @@ func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 func (m10s *Monitor10s) ProcessWord(word Word, ioGroup uint8) {
 	m10s.RecordStatuses(word, ioGroup)
 	m10s.RecordADC(word, ioGroup)
+}
+
+func (m1min *Monitor1min) ProcessWord(word Word, ioGroup uint8) {
+	// m1min.RecordStatuses(word, ioGroup)
+	m1min.RecordADC(word, ioGroup)
 }
 
 func (sm *SyncMonitor) ProcessWord(word Word, ioGroup uint8) {
@@ -349,6 +370,27 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 
 	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] = UpdateMeanRMS(m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel], m10s.NPacketsPerChannel[channel], adc)
 	m10s.NPacketsPerChannel[channel]++
+
+}
+
+func (m1min *Monitor1min) RecordADC(word Word, ioGroup uint8) {
+	if word.Type != WordTypeData {
+		return
+	}
+
+	pacData := word.PacData()
+	packet := pacData.Packet
+	
+	var channel ChannelKey
+	channel.IoGroup = ioGroup
+	channel.IoChannel = pacData.IoChannel
+	channel.ChipID = packet.Chip()
+	channel.ChannelID = packet.Channel()
+	
+	adc := float64(packet.Data())
+
+	m1min.ADCMeanPerChannel[channel], m1min.ADCRMSPerChannel[channel] = UpdateMeanRMS(m1min.ADCMeanPerChannel[channel], m1min.ADCRMSPerChannel[channel], m1min.NPacketsPerChannel[channel], adc)
+	m1min.NPacketsPerChannel[channel]++
 
 }
 

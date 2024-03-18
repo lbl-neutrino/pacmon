@@ -154,13 +154,18 @@ def main(geometry_yaml=_default_geometry_yaml,
                     io_group, io_channel)], chip, channel)] = x, y
 
         # Save dictionaries
-        geometry['pixel_pitch'] = pixel_pitch
-        geometry_mod2['pixel_pitch'] = pixel_pitch_mod2
+        d = dict()
+        d['geometry'] = geometry
+        d['pixel_pitch'] = pixel_pitch
+
+        d_mod2 = dict()
+        d_mod2['geometry'] = geometry_mod2
+        d_mod2['pixel_pitch'] = pixel_pitch_mod2
 
         with open("geometry_mod013.json", "w") as outfile:
-            json.dump(geometry, outfile)
+            json.dump(d, outfile)
         with open("geometry_mod2.json", "w") as outfile_mod2:
-            json.dump(geometry_mod2, outfile_mod2)
+            json.dump(d_mod2, outfile_mod2)
 
 
 if __name__ == '__main__':

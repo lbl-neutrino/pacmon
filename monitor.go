@@ -345,8 +345,11 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	if word.Type != WordTypeData {
 		return
 	}
+        pacData := word.PacData()
+	if !pacData.Packet.ValidParity() { // Skip invalid parity
+		return
+	}
 
-	pacData := word.PacData()
 	packet := pacData.Packet
 	
 	var channel ChannelKey
@@ -377,8 +380,10 @@ func (m1min *Monitor1min) RecordADC(word Word, ioGroup uint8) {
 	if word.Type != WordTypeData {
 		return
 	}
-
-	pacData := word.PacData()
+        pacData := word.PacData()
+        if !pacData.Packet.ValidParity() { // Skip invalid parity
+                return
+        }	
 	packet := pacData.Packet
 	
 	var channel ChannelKey

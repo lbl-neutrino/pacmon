@@ -20,6 +20,11 @@ import (
 )
 
 func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
+        length := len(m1min.ADCMeanPerChannel)
+        if length == 0 {
+                return
+        }
+
 	normMean := 50.
 	normRMS := 10.
 	normRate := 10.
@@ -38,8 +43,6 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 	pRate.X.Tick.Label.Font.Size = 30
 	pRate.Y.Tick.Label.Font.Size = 30
 
-	length := len(m1min.ADCMeanPerChannel)
-
 	xyzsMean := make(plotter.XYZs, length)
 	xyzsRMS := make(plotter.XYZs, length)
 	xyzsRate := make(plotter.XYZs, length)
@@ -50,7 +53,7 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 
 		// convert from ChannelKey to ChannelTile
 		var channelTile ChannelTile
-		channelTile.IoGroup = channelKey.IoGroup
+		channelTile.IoGroup = 2 - (channelKey.IoGroup % 2)
 		channelTile.TileID = (uint8(channelKey.IoChannel)-1)/4 + 1 + 8*(1-(channelKey.IoGroup%2))
 		channelTile.ChipID = channelKey.ChipID
 		channelTile.ChannelID = channelKey.ChannelID
@@ -206,13 +209,13 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 
 	fmt.Println(now, ": saving plot for io_group = ", ioGroup)
 	// Save for history
-	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("iog_%d_mean_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("/data/plots/mean/iog_%d_mean_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
 		log.Panic(err)
 	}
-	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("/data/plots/rms/iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
 		log.Panic(err)
 	}
-	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("iog_%d_rate_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("/data/plots/rate/iog_%d_rate_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
 		log.Panic(err)
 	}
 	// Save for instant updates

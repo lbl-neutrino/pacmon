@@ -19,17 +19,18 @@ import (
 	// "os"
 )
 
-func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
-        length := len(m1min.ADCMeanPerChannel)
-        if length == 0 {
-                return
-        }
+func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms Norms, timeDiff float64) {
 
-	normMean := 50.
-	normRMS := 10.
-	normRate := 10.
+	length := len(mPlots.ADCMeanPerChannel)
+	if length == 0 {
+		return
+	}
 
-	fmt.Println(time.Now(), ": start plotting")
+	normMean := norms.Mean
+	normRMS := norms.RMS
+	normRate := norms.Rate
+
+	fmt.Println(time.Now(), ": start plotting for io_group = ", ioGroup)
 
 	pMean := plot.New()
 	pMean.X.Tick.Label.Font.Size = 30
@@ -49,7 +50,7 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 
 	i := 0
 
-	for channelKey, adc := range m1min.ADCMeanPerChannel {
+	for channelKey, adc := range mPlots.ADCMeanPerChannel {
 
 		// convert from ChannelKey to ChannelTile
 		var channelTile ChannelTile
@@ -76,7 +77,7 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 		// RMS
 		xyzsRMS[i].X = xy.X
 		xyzsRMS[i].Y = xy.Y
-		xyzsRMS[i].Z = m1min.ADCRMSPerChannel[channelKey] / normRMS
+		xyzsRMS[i].Z = mPlots.ADCRMSPerChannel[channelKey] / normRMS
 		if xyzsRMS[i].Z > 1 {
 			xyzsRMS[i].Z = 1.
 		}
@@ -84,7 +85,7 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 		// Rate
 		xyzsRate[i].X = xy.X
 		xyzsRate[i].Y = xy.Y
-		xyzsRate[i].Z = float64(m1min.NPacketsPerChannel[channelKey]) / normRate
+		xyzsRate[i].Z = (float64(mPlots.NPacketsPerChannel[channelKey]) / timeDiff) / normRate
 		if xyzsRate[i].Z > 1 {
 			xyzsRate[i].Z = 1.
 		}
@@ -201,31 +202,33 @@ func (m1min *Monitor1min) PlotMean(geometry Geometry, ioGroup uint8) {
 	pRate.Add(scRate)
 
 	now := time.Now()
-	pMean.Title.Text = fmt.Sprintf("iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
-	pRMS.Title.Text = fmt.Sprintf("iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
-	pRate.Title.Text = fmt.Sprintf("iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
+	pMean.Title.Text = fmt.Sprintf("ADC Mean - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
+	pRMS.Title.Text = fmt.Sprintf("ADC RMS - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
+	pRate.Title.Text = fmt.Sprintf("Rate - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
 
-	pMean.Title.TextStyle.Font.Size = 30
+	pMean.Title.TextStyle.Font.Size = 50
+	pRMS.Title.TextStyle.Font.Size = 50
+	pRate.Title.TextStyle.Font.Size = 50
 
 	fmt.Println(now, ": saving plot for io_group = ", ioGroup)
 	// Save for history
-	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("/data/plots/mean/iog_%d_mean_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+80.), fmt.Sprintf("/data/plots/mean/iog_%d_mean_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
 		log.Panic(err)
 	}
-	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("/data/plots/rms/iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+80.), fmt.Sprintf("/data/plots/rms/iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
 		log.Panic(err)
 	}
-	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("/data/plots/rate/iog_%d_rate_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+80.), fmt.Sprintf("/data/plots/rate/iog_%d_rate_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
 		log.Panic(err)
 	}
 	// Save for instant updates
-	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("iog_%d_mean.png", ioGroup)); err != nil {
+	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+80.), fmt.Sprintf("iog_%d_mean.png", ioGroup)); err != nil {
 		log.Panic(err)
 	}
-	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("iog_%d_rms.png", ioGroup)); err != nil {
+	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+80.), fmt.Sprintf("iog_%d_rms.png", ioGroup)); err != nil {
 		log.Panic(err)
 	}
-	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+60.), fmt.Sprintf("iog_%d_rate.png", ioGroup)); err != nil {
+	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+80.), fmt.Sprintf("iog_%d_rate.png", ioGroup)); err != nil {
 		log.Panic(err)
 	}
 

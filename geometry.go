@@ -91,11 +91,13 @@ func LoadGeometry(path string) Geometry {
 		geo.ChannelToXY[channel] = xy
 	}
 
-	var channel ChannelTile
-	channel.IoGroup = 1
-	channel.TileID = 7
-	channel.ChipID = 11
-	channel.ChannelID = 63
+	// Quick check
+
+	// var channel ChannelTile
+	// channel.IoGroup = 1
+	// channel.TileID = 7
+	// channel.ChipID = 11
+	// channel.ChannelID = 63
 
 	// fmt.Println(config.Geometry["1-7-11-63"])
 	// fmt.Println(geo.ChannelToXY[channel])

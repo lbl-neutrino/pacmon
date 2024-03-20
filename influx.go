@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -16,13 +15,13 @@ func IoChannelToTileId(ioChannel int) int {
 
 func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDiff float64) {
 
-	fmt.Println("\t", time.Now(), " : start writing to influx")
+	// fmt.Println("\t", time.Now(), " : start writing to influx")
 
 	makePoint := func(name string) *write.Point {
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
 
-	fmt.Println("\t", time.Now(), " : write word_types_rates")
+	// fmt.Println("\t", time.Now(), " : write word_types_rates")
 
 	point := makePoint("word_types_rates")
 	for wordtype, count := range m.WordTypeCounts {
@@ -30,7 +29,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 	}
 	writeAPI.WritePoint(point)
 
-	fmt.Println("\t", time.Now(), " : write data_statuses_rates")
+	// fmt.Println("\t", time.Now(), " : write data_statuses_rates")
 
 	for ioChannel, counts := range m.DataStatusCounts {
 		point = makePoint("data_statuses_rates")
@@ -47,7 +46,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write config_statuses_rates")
+	// fmt.Println("\t", time.Now(), " : write config_statuses_rates")
 
 	for ioChannel, counts := range m.ConfigStatusCounts {
 		point = makePoint("config_statuses_rates")
@@ -65,7 +64,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_chip")
+	// fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_chip")
 
 	for chip, counts := range m.DataStatusCountsPerChip {
 		point = makePoint("data_statuses_rates_per_chip")
@@ -83,7 +82,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_chip")
+	// fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_chip")
 
 	for chip, counts := range m.ConfigStatusCountsPerChip {
 		point = makePoint("config_statuses_rates_per_chip")
@@ -102,7 +101,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write local_fifo_statuses")
+	// fmt.Println("\t", time.Now(), " : write local_fifo_statuses")
 
 	for channel, counts := range m.FifoFlagCounts {
 		total := float64(counts.LocalFifoLessHalfFull + counts.LocalFifoMoreHalfFull + counts.LocalFifoFull)
@@ -125,7 +124,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write shared_fifo_statuses")
+	// fmt.Println("\t", time.Now(), " : write shared_fifo_statuses")
 
 	for channel, counts := range m.FifoFlagCounts {
 		total := float64(counts.SharedFifoLessHalfFull + counts.SharedFifoMoreHalfFull + counts.SharedFifoFull)
@@ -157,7 +156,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
 
-	fmt.Println("\t", time.Now(), " : write packet_adc_total")
+	// fmt.Println("\t", time.Now(), " : write packet_adc_total")
 
 	point := makePoint("packet_adc_total")
 	point.AddField("adc_mean", m10s.ADCMeanTotal)
@@ -165,7 +164,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 	point.AddField("n_packets", m10s.NPacketsTotal)
 	writeAPI.WritePoint(point)
 
-	fmt.Println("\t", time.Now(), " : write packet_adc_per_channel")
+	// fmt.Println("\t", time.Now(), " : write packet_adc_per_channel")
 
 	for channel, adc := range m10s.ADCMeanPerChannel {
 		point = makePoint("packet_adc_per_channel")
@@ -183,7 +182,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write packet_adc_per_chip")
+	// fmt.Println("\t", time.Now(), " : write packet_adc_per_chip")
 
 	for chip, adc := range m10s.ADCMeanPerChip {
 		point = makePoint("packet_adc_per_chip")
@@ -200,7 +199,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_channel")
+	// fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_channel")
 
 	for channel, counts := range m10s.DataStatusCountsPerChannel {
 		point = makePoint("data_statuses_rates_per_channel")
@@ -220,7 +219,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		writeAPI.WritePoint(point)
 	}
 
-	fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_channel")
+	// fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_channel")
 
 	for channel, counts := range m10s.ConfigStatusCountsPerChannel {
 		point = makePoint("config_statuses_rates_per_channel")

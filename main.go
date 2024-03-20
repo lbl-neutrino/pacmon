@@ -41,7 +41,7 @@ var cmd = cobra.Command{
 	Run:   run,
 }
 
-func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNorms Norms, client influxdb2.Client, wg *sync.WaitGroup) {
+func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNorms Norms, client influxdb2.Client, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
@@ -103,21 +103,21 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNor
 
 		if time.Since(last).Seconds() > 1 {
 			now = time.Now()
-			monitor.WriteToInflux(writeAPI, now, now.Sub(last).Seconds())
+			monitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now.Sub(last).Seconds())
 			monitor = NewMonitor() // Reset monitor
 			last = now
 		}
 
 		if time.Since(last10s).Seconds() > 10 {
 			now10s = time.Now()
-			monitor10s.WriteToInflux(writeAPI, now10s, now10s.Sub(last10s).Seconds())
+			monitor10s.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now10s.Sub(last10s).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = now10s
 		}
 
 		if time.Since(lastPlots).Seconds() > 30 {
 			nowPlots = time.Now()
-			monitorPlots.PlotMetrics(geometry, ioGroup, PlotNorms, nowPlots.Sub(lastPlots).Seconds())
+			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
 			monitorPlots = NewMonitorPlots() // Reset monitor
 			lastPlots = nowPlots
 		}
@@ -140,7 +140,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	content, err := os.ReadFile(PacmanIoJson)
 	if err == nil {
-		fmt.Println("Reading IO config from JSON file...")
+		fmt.Println("Reading IO config from JSON file: ", PacmanIoJson)
 		var config IoConfig
 
 		err = json.Unmarshal([]byte(content), &config)
@@ -151,13 +151,13 @@ func run(cmd *cobra.Command, args []string) {
 
 		PacmanURL = nil
 		PacmanIog = nil
+
+		fmt.Println("Found the following PACMANs vs. IO groups: ")
 		for _, iog := range config.IoGroupPacmanURL {
 			PacmanURL = append(PacmanURL, fmt.Sprintf("tcp://%s:5556", iog[1].(string)))
 			PacmanIog = append(PacmanIog, strconv.Itoa(int(iog[0].(float64))))
+			fmt.Println("\tURL: ", PacmanURL[len(PacmanURL)-1], " - io_group = ", PacmanIog[len(PacmanIog)-1])
 		}
-
-		fmt.Println("Read URLs: ", PacmanURL)
-		fmt.Println("Corresponding to IO groups: ", PacmanIog)
 
 	} else {
 		fmt.Println("Error when opening configuration file: ", err)

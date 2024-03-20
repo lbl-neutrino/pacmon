@@ -32,7 +32,7 @@ type GeoConfig struct {
 func ReadGeometryFile(path string) GeoConfig {
 	content, err := os.ReadFile(path)
 	if err == nil {
-		fmt.Println("Reading geometry config from JSON file...")
+		fmt.Println("Reading geometry config from JSON file: ", path)
 
 		var config GeoConfig
 

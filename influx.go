@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -15,7 +14,7 @@ func IoChannelToTileId(ioChannel int) int {
 	return (ioChannel-1)/4 + 1
 }
 
-func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
+func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDiff float64) {
 
 	fmt.Println("\t", time.Now(), " : start writing to influx")
 
@@ -29,7 +28,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 	for wordtype, count := range m.WordTypeCounts {
 		point.AddField(wordtype.String(), float64(count)/timeDiff)
 	}
-	writeAPI.WritePoint(context.Background(), point)
+	writeAPI.WritePoint(point)
 
 	fmt.Println("\t", time.Now(), " : write data_statuses_rates")
 
@@ -45,7 +44,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
 		point.AddField("downstream", float64(counts.Downstream)/timeDiff)
 		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write config_statuses_rates")
@@ -63,7 +62,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
 		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_chip")
@@ -81,7 +80,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
 		point.AddField("downstream", float64(counts.Downstream)/timeDiff)
 		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_chip")
@@ -100,7 +99,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
 		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write local_fifo_statuses")
@@ -123,7 +122,7 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point.AddField("more_half_full", float64(counts.LocalFifoMoreHalfFull)/total)
 		point.AddField("full", float64(counts.LocalFifoFull)/total)
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write shared_fifo_statuses")
@@ -145,12 +144,14 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time
 		point.AddField("more_half_full", float64(counts.SharedFifoMoreHalfFull)/total)
 		point.AddField("full", float64(counts.SharedFifoFull)/total)
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
+
+	writeAPI.Flush()
 
 }
 
-func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time, timeDiff float64) {
+func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDiff float64) {
 
 	makePoint := func(name string) *write.Point {
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
@@ -162,7 +163,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 	point.AddField("adc_mean", m10s.ADCMeanTotal)
 	point.AddField("adc_rms", m10s.ADCRMSTotal)
 	point.AddField("n_packets", m10s.NPacketsTotal)
-	writeAPI.WritePoint(context.Background(), point)
+	writeAPI.WritePoint(point)
 
 	fmt.Println("\t", time.Now(), " : write packet_adc_per_channel")
 
@@ -179,7 +180,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 		point.AddField("adc_rms", m10s.ADCRMSPerChannel[channel])
 		point.AddField("n_packets", m10s.NPacketsPerChannel[channel])
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write packet_adc_per_chip")
@@ -196,7 +197,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 		point.AddField("adc_rms", m10s.ADCRMSPerChip[chip])
 		point.AddField("n_packets", m10s.NPacketsPerChip[chip])
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_channel")
@@ -216,7 +217,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 		point.AddField("downstream", float64(counts.Downstream)/timeDiff)
 		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
 
 	fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_channel")
@@ -237,12 +238,14 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow tim
 		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
+
+	writeAPI.Flush()
 
 }
 
-func (sm *SyncMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time) {
+func (sm *SyncMonitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time) {
 
 	makePoint := func(name string) *write.Point {
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
@@ -262,11 +265,13 @@ func (sm *SyncMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time
 		if sm.Type[ind] == SyncTypeClkSource {
 			point.AddField("clk_source", float64(t))
 		}
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
+
+	writeAPI.Flush()
 }
 
-func (tm *TrigMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time.Time) {
+func (tm *TrigMonitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time) {
 
 	makePoint := func(name string) *write.Point {
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
@@ -279,6 +284,8 @@ func (tm *TrigMonitor) WriteToInflux(writeAPI api.WriteAPIBlocking, timeNow time
 
 		point.AddField("trig", float64(t))
 
-		writeAPI.WritePoint(context.Background(), point)
+		writeAPI.WritePoint(point)
 	}
+
+	writeAPI.Flush()
 }

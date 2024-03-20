@@ -58,7 +58,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNor
 	socket.SetSubscribe("")
 	socket.Connect(singlePacmanURL)
 
-	writeAPI := client.WriteAPIBlocking(InfluxOrg, InfluxBucket)
+	writeAPI := client.WriteAPI(InfluxOrg, InfluxBucket)
 	now := time.Now()
 	last := time.Now()
 	now10s := time.Now()

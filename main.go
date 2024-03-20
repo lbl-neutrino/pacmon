@@ -181,7 +181,7 @@ func run(cmd *cobra.Command, args []string) {
 			panic(err)
 		}
 		if ioGroup == 5 || ioGroup == 6 { // Module 2
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, &wg)
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, client, &wg)
 		} else {
 			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, client, &wg)
 		}

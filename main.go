@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	zmq "github.com/pebbe/zmq4"
 	cobra "github.com/spf13/cobra"
 )
@@ -40,7 +41,7 @@ var cmd = cobra.Command{
 	Run:   run,
 }
 
-func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNorms Norms, wg *sync.WaitGroup) {
+func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNorms Norms, client influxdb2.Client, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
@@ -57,7 +58,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNor
 	socket.SetSubscribe("")
 	socket.Connect(singlePacmanURL)
 
-	writeAPI := getWriteAPI(InfluxURL, InfluxOrg, InfluxBucket)
+	writeAPI := client.WriteAPIBlocking(InfluxOrg, InfluxBucket)
 	now := time.Now()
 	last := time.Now()
 	now10s := time.Now()
@@ -126,6 +127,15 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, PlotNor
 
 func run(cmd *cobra.Command, args []string) {
 
+	token := os.Getenv("INFLUXDB_TOKEN")
+	if token == "" {
+		fmt.Fprintf(os.Stderr,
+			"Please set the INFLUXDB_TOKEN environment variable\n")
+		os.Exit(1)
+	}
+
+	client := influxdb2.NewClientWithOptions(InfluxURL, token, influxdb2.DefaultOptions().SetPrecision(time.Millisecond))
+
 	var wg sync.WaitGroup
 
 	content, err := os.ReadFile(PacmanIoJson)
@@ -166,9 +176,9 @@ func run(cmd *cobra.Command, args []string) {
 			panic(err)
 		}
 		if ioGroup == 5 || ioGroup == 6 {
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, &wg)
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, client, &wg)
 		} else {
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, &wg)
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, client, &wg)
 		}
 
 	}

@@ -33,6 +33,7 @@ var InfluxOrg string
 var InfluxBucket string
 var GeometryFileMod013 string
 var GeometryFileMod2 string
+var UseSingleCube bool
 var PlotNorms Norms
 
 var cmd = cobra.Command{
@@ -167,6 +168,10 @@ func run(cmd *cobra.Command, args []string) {
 	geometryMod013 := LoadGeometry(GeometryFileMod013)
 	geometryMod2 := LoadGeometry(GeometryFileMod2)
 
+	if UseSingleCube {
+		geometryMod013 = LoadGeometry("layout/geometry_singlecube.json")
+	}
+
 	wg.Add(len(PacmanURL))
 
 	for iPacman := 0; iPacman < len(PacmanURL); iPacman++ {
@@ -175,8 +180,8 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			panic(err)
 		}
-		if ioGroup == 5 || ioGroup == 6 {
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, client, &wg)
+		if ioGroup == 5 || ioGroup == 6 { // Module 2
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, &wg)
 		} else {
 			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, client, &wg)
 		}
@@ -206,7 +211,7 @@ func main() {
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
-
+	cmd.PersistentFlags().BoolVarP(&UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)

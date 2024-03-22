@@ -23,6 +23,7 @@ type Norms struct {
 	Mean float64
 	RMS  float64
 	Rate float64
+	Freq float64
 }
 
 var PacmanURL []string
@@ -116,7 +117,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			last10s = now10s
 		}
 
-		if time.Since(lastPlots).Seconds() > 30 {
+		if time.Since(lastPlots).Seconds() > plotNorms.Freq {
 			nowPlots = time.Now()
 			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
 			monitorPlots = NewMonitorPlots() // Reset monitor
@@ -208,6 +209,7 @@ func main() {
 		"JSON file with the layout of Modules 0, 1 and 3 (io_group = 1,2,3,4,7,8)")
 	cmd.PersistentFlags().StringVar(&GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2.json",
 		"JSON file with the layout of Module 2 (io_group = 5,6)")
+	cmd.PersistentFlags().Float64VarP(&PlotNorms.Freq, "plot-freq", "f", 30., "Frequency of updating plots in seconds. Default: 30s.")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")

@@ -242,6 +242,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 
 	for i, channel := range m10s.TopHotChannels {
 		point = makePoint("top_data_rate_channels")
+
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
@@ -253,6 +254,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 
 	for i, channel := range m10s.TopADCMeanChannels {
 		point = makePoint("top_adc_mean_channels")
+
 		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
 		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
 		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
@@ -260,6 +262,20 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
 		point.AddField("adc_mean", float64(m10s.TopADCMeanValues[i])/timeDiff)
+
+		writeAPI.WritePoint(point)
+	}
+
+	for i, channel := range m10s.TopADCRMSChannels {
+		point = makePoint("top_adc_rms_channels")
+
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("adc_mean", float64(m10s.TopADCRMSValues[i])/timeDiff)
 
 		writeAPI.WritePoint(point)
 	}

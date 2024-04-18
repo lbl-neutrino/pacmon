@@ -87,6 +87,9 @@ type Monitor10s struct {
 
 	TopADCMeanChannels []ChannelKey
 	TopADCMeanValues   []float64
+
+	TopADCRMSChannels []ChannelKey
+	TopADCRMSValues   []float64
 }
 
 type MonitorPlots struct {
@@ -383,6 +386,7 @@ func (m10s *Monitor10s) UpdateTopHotChannels() {
 
 	m10s.TopHotChannels, m10s.TopHotValues = sortByDataRates(m10s.DataStatusCountsPerChannel, 100)
 	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByADC(m10s.ADCMeanPerChannel, 100)
+	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByADC(m10s.ADCRMSPerChannel, 100)
 
 }
 

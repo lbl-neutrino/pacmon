@@ -23,6 +23,7 @@ type Norms struct {
 	Mean float64
 	RMS  float64
 	Rate float64
+	Freq float64
 }
 
 var PacmanURL []string
@@ -33,6 +34,7 @@ var InfluxOrg string
 var InfluxBucket string
 var GeometryFileMod013 string
 var GeometryFileMod2 string
+var UseSingleCube bool
 var PlotNorms Norms
 
 var cmd = cobra.Command{
@@ -110,12 +112,13 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 
 		if time.Since(last10s).Seconds() > 10 {
 			now10s = time.Now()
+			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now10s.Sub(last10s).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = now10s
 		}
 
-		if time.Since(lastPlots).Seconds() > 60 {
+		if time.Since(lastPlots).Seconds() > plotNorms.Freq {
 			nowPlots = time.Now()
 			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
 			monitorPlots = NewMonitorPlots() // Reset monitor
@@ -167,6 +170,10 @@ func run(cmd *cobra.Command, args []string) {
 	geometryMod013 := LoadGeometry(GeometryFileMod013)
 	geometryMod2 := LoadGeometry(GeometryFileMod2)
 
+	if UseSingleCube {
+		geometryMod013 = LoadGeometry("layout/geometry_singlecube.json")
+	}
+
 	wg.Add(len(PacmanURL))
 
 	for iPacman := 0; iPacman < len(PacmanURL); iPacman++ {
@@ -175,7 +182,7 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			panic(err)
 		}
-		if ioGroup == 5 || ioGroup == 6 {
+		if ioGroup == 5 || ioGroup == 6 { // Module 2
 			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, client, &wg)
 		} else {
 			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, client, &wg)
@@ -203,10 +210,11 @@ func main() {
 		"JSON file with the layout of Modules 0, 1 and 3 (io_group = 1,2,3,4,7,8)")
 	cmd.PersistentFlags().StringVar(&GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2.json",
 		"JSON file with the layout of Module 2 (io_group = 5,6)")
+	cmd.PersistentFlags().Float64VarP(&PlotNorms.Freq, "plot-freq", "f", 30., "Frequency of updating plots in seconds")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
-
+	cmd.PersistentFlags().BoolVarP(&UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)

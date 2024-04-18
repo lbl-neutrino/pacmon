@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -238,6 +239,11 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
 
 		writeAPI.WritePoint(point)
+	}
+
+	for i, channel := range m10s.TopHotChannels {
+		point = makePoint("top_data_rate_channels")
+		point.AddField(fmt.Sprintf("%d-%d-%d-%d", channel.IoGroup, channel.IoChannel, channel.ChipID, channel.ChannelID), float64(m10s.TopHotValues[i])/timeDiff)
 	}
 
 	writeAPI.Flush()

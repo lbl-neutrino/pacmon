@@ -378,7 +378,7 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 
 func (m10s *Monitor10s) UpdateTopHotChannels() {
 
-	m10s.TopHotChannels, m10s.TopHotValues = sortByValue(m10s.DataStatusCountsPerChannel, 20)
+	m10s.TopHotChannels, m10s.TopHotValues = sortByValue(m10s.DataStatusCountsPerChannel, 100)
 
 }
 

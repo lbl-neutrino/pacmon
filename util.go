@@ -30,7 +30,9 @@ func UpdateMeanRMS(oldMean float64, oldRMS float64, oldNPackets uint32, newValue
 	return newMean, math.Sqrt(newVariance)
 }
 
-func sortByValue(inputMap map[ChannelKey]DataStatusCounts, n int) ([]ChannelKey, []uint) {
+// For sorting maps with arbitrary key types
+
+func sortByDataRates(inputMap map[ChannelKey]DataStatusCounts, n int) ([]ChannelKey, []uint) {
 	// Create a slice to hold the keys
 	keys := make([]ChannelKey, 0, len(inputMap))
 
@@ -50,6 +52,31 @@ func sortByValue(inputMap map[ChannelKey]DataStatusCounts, n int) ([]ChannelKey,
 	for i := 0; i < n && i < len(keys); i++ {
 		topNKeys = append(topNKeys, keys[i])
 		topNValues = append(topNValues, inputMap[keys[i]].Total)
+	}
+
+	return topNKeys, topNValues
+}
+
+func sortByADC(inputMap map[ChannelKey]float64, n int) ([]ChannelKey, []float64) {
+	// Create a slice to hold the keys
+	keys := make([]ChannelKey, 0, len(inputMap))
+
+	// Iterate over the map and add keys to the slice
+	for key := range inputMap {
+		keys = append(keys, key)
+	}
+
+	// Sort the keys based on the corresponding values
+	sort.Slice(keys, func(i, j int) bool {
+		return inputMap[keys[i]] > inputMap[keys[j]]
+	})
+
+	// Extract top N keys and their corresponding values
+	topNKeys := make([]ChannelKey, 0, n)
+	topNValues := make([]float64, 0, n)
+	for i := 0; i < n && i < len(keys); i++ {
+		topNKeys = append(topNKeys, keys[i])
+		topNValues = append(topNValues, inputMap[keys[i]])
 	}
 
 	return topNKeys, topNValues

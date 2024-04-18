@@ -115,7 +115,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			last10s = now10s
 		}
 
-		if time.Since(lastPlots).Seconds() > 30 {
+		if time.Since(lastPlots).Seconds() > 60 {
 			nowPlots = time.Now()
 			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
 			monitorPlots = NewMonitorPlots() // Reset monitor

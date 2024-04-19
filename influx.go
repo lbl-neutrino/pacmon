@@ -261,7 +261,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-		point.AddField("adc_mean", float64(m10s.TopADCMeanValues[i])/timeDiff)
+		point.AddField("adc_mean", float64(m10s.TopADCMeanValues[i]))
 
 		writeAPI.WritePoint(point)
 	}
@@ -275,7 +275,7 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-		point.AddField("adc_mean", float64(m10s.TopADCRMSValues[i])/timeDiff)
+		point.AddField("adc_rms", float64(m10s.TopADCRMSValues[i]))
 
 		writeAPI.WritePoint(point)
 	}

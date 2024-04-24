@@ -298,6 +298,10 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 	}
 
 	pacData := word.PacData()
+	if pacData.Packet.Type() != PacketTypeData { // Skip non-data
+		return
+	}
+
 	packet := pacData.Packet
 	var channel ChannelKey
 	channel.IoGroup = ioGroup
@@ -415,6 +419,9 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 		return
 	}
 	pacData := word.PacData()
+	if pacData.Packet.Type() != PacketTypeData { // Skip non-data
+		return
+	}
 	if !pacData.Packet.ValidParity() { // Skip invalid parity
 		return
 	}
@@ -459,6 +466,9 @@ func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
 	}
 	pacData := word.PacData()
 	if !pacData.Packet.ValidParity() { // Skip invalid parity
+		return
+	}
+	if pacData.Packet.Type() != PacketTypeData { // Skip non-data
 		return
 	}
 	packet := pacData.Packet

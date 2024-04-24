@@ -62,6 +62,9 @@ type Monitor struct {
 	ConfigStatusCounts        map[IoChannelKey]ConfigStatusCounts
 	ConfigStatusCountsPerChip map[ChipKey]ConfigStatusCounts
 
+	OtherStatusCounts        map[IoChannelKey]uint
+	OtherStatusCountsPerChip map[ChipKey]uint
+
 	FifoFlagCounts map[ChannelKey]FifoFlagCounts
 }
 
@@ -81,6 +84,7 @@ type Monitor10s struct {
 
 	DataStatusCountsPerChannel   map[ChannelKey]DataStatusCounts
 	ConfigStatusCountsPerChannel map[ChannelKey]ConfigStatusCounts
+	OtherStatusCountsPerChannel  map[ChannelKey]uint
 
 	TopHotChannels []ChannelKey
 	TopHotValues   []uint
@@ -117,6 +121,8 @@ func NewMonitor() *Monitor {
 		DataStatusCountsPerChip:   make(map[ChipKey]DataStatusCounts),
 		ConfigStatusCounts:        make(map[IoChannelKey]ConfigStatusCounts),
 		ConfigStatusCountsPerChip: make(map[ChipKey]ConfigStatusCounts),
+		OtherStatusCounts:         make(map[IoChannelKey]uint),
+		OtherStatusCountsPerChip:  make(map[ChipKey]uint),
 		FifoFlagCounts:            make(map[ChannelKey]FifoFlagCounts),
 	}
 }
@@ -131,6 +137,7 @@ func NewMonitor10s() *Monitor10s {
 		NPacketsPerChannel:           make(map[ChannelKey]uint32),
 		DataStatusCountsPerChannel:   make(map[ChannelKey]DataStatusCounts),
 		ConfigStatusCountsPerChannel: make(map[ChannelKey]ConfigStatusCounts),
+		OtherStatusCountsPerChannel:  make(map[ChannelKey]uint),
 	}
 }
 func NewMonitorPlots() *MonitorPlots {
@@ -200,51 +207,88 @@ func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
 	chipKey.IoChannel = pacData.IoChannel
 	chipKey.ChipID = packet.Chip()
 
-	var dataStatuses DataStatusCounts
-	var configStatuses ConfigStatusCounts
-	// Initialize with current values in monitor
-	dataStatuses = m.DataStatusCounts[ioChannelKey]
-	configStatuses = m.ConfigStatusCounts[ioChannelKey]
+	// Get current values in monitor
+	dataStatuses := m.DataStatusCounts[ioChannelKey]
+	configStatuses := m.ConfigStatusCounts[ioChannelKey]
+	otherStatuses := m.OtherStatusCounts[ioChannelKey]
+
+	dataStatusesPerChip := m.DataStatusCounts[ioChannelKey]
+	configStatusesPerChip := m.ConfigStatusCounts[ioChannelKey]
+	otherStatusesPerChip := m.OtherStatusCounts[ioChannelKey]
 
 	isConfigRead := packet.Type() == PacketTypeRead
 	isConfigWrite := packet.Type() == PacketTypeWrite
 	isConfig := isConfigRead || isConfigWrite
 
-	dataStatuses.Total++
+	isData := packet.Type() == PacketTypeData
+
 	if isConfig {
+
 		configStatuses.Total++
-	}
+		configStatusesPerChip.Total++
 
-	if packet.ValidParity() {
-		dataStatuses.ValidParity++
-	} else {
-		dataStatuses.InvalidParity++
-		configStatuses.InvalidParity++
-	}
+		if !packet.ValidParity() {
+			configStatuses.InvalidParity++
+			configStatusesPerChip.InvalidParity++
+		}
 
-	if packet.Downstream() {
-		dataStatuses.Downstream++
-		if isConfigRead {
-			configStatuses.DownstreamRead++
-		} else if isConfigWrite {
-			configStatuses.DownstreamWrite++
+		if packet.Downstream() {
+
+			if isConfigRead {
+				configStatuses.DownstreamRead++
+				configStatusesPerChip.DownstreamRead++
+			} else if isConfigWrite {
+				configStatuses.DownstreamWrite++
+				configStatusesPerChip.DownstreamWrite++
+			}
+
+		} else {
+
+			if isConfigRead {
+				configStatuses.UpstreamRead++
+				configStatusesPerChip.UpstreamRead++
+			} else if isConfigWrite {
+				configStatuses.UpstreamWrite++
+				configStatusesPerChip.UpstreamWrite++
+			}
+
 		}
+
+	} else if isData {
+
+		dataStatuses.Total++
+		dataStatusesPerChip.Total++
+
+		if packet.ValidParity() {
+			dataStatuses.ValidParity++
+			dataStatusesPerChip.ValidParity++
+		} else {
+			dataStatuses.InvalidParity++
+			dataStatusesPerChip.InvalidParity++
+		}
+
+		if packet.Downstream() {
+			dataStatuses.Downstream++
+			dataStatusesPerChip.Downstream++
+		} else {
+			dataStatuses.Upstream++
+			dataStatusesPerChip.Upstream++
+		}
+
 	} else {
-		dataStatuses.Upstream++
-		if isConfigRead {
-			configStatuses.UpstreamRead++
-		} else if isConfigWrite {
-			configStatuses.UpstreamWrite++
-		}
+		otherStatuses++
+		otherStatusesPerChip++
 	}
 
 	// Update monitor
 
 	m.DataStatusCounts[ioChannelKey] = dataStatuses
 	m.ConfigStatusCounts[ioChannelKey] = configStatuses
+	m.OtherStatusCounts[ioChannelKey] = otherStatuses
 
-	m.DataStatusCountsPerChip[chipKey] = dataStatuses
-	m.ConfigStatusCountsPerChip[chipKey] = configStatuses
+	m.DataStatusCountsPerChip[chipKey] = dataStatusesPerChip
+	m.ConfigStatusCountsPerChip[chipKey] = configStatusesPerChip
+	m.OtherStatusCountsPerChip[chipKey] = otherStatusesPerChip
 
 }
 
@@ -302,48 +346,67 @@ func (m10s *Monitor10s) RecordStatuses(word Word, ioGroup uint8) {
 	channel.ChipID = packet.Chip()
 	channel.ChannelID = packet.Channel()
 
-	var dataStatuses DataStatusCounts
-	var configStatuses ConfigStatusCounts
-
-	// Initialize with current values in monitor
-	dataStatuses = m10s.DataStatusCountsPerChannel[channel]
-	configStatuses = m10s.ConfigStatusCountsPerChannel[channel]
+	// Get current values in monitor
+	dataStatuses := m10s.DataStatusCountsPerChannel[channel]
+	configStatuses := m10s.ConfigStatusCountsPerChannel[channel]
+	otherStatuses := m10s.OtherStatusCountsPerChannel[channel]
 
 	isConfigRead := packet.Type() == PacketTypeRead
 	isConfigWrite := packet.Type() == PacketTypeWrite
 	isConfig := isConfigRead || isConfigWrite
 
-	dataStatuses.Total++
+	isData := packet.Type() == PacketTypeData
+
 	if isConfig {
+
 		configStatuses.Total++
-	}
 
-	if packet.ValidParity() {
-		dataStatuses.ValidParity++
-	} else {
-		dataStatuses.InvalidParity++
-		configStatuses.InvalidParity++
-	}
+		if !packet.ValidParity() {
+			configStatuses.InvalidParity++
+		}
 
-	if packet.Downstream() {
-		dataStatuses.Downstream++
-		if isConfigRead {
-			configStatuses.DownstreamRead++
-		} else if isConfigWrite {
-			configStatuses.DownstreamWrite++
+		if packet.Downstream() {
+
+			if isConfigRead {
+				configStatuses.DownstreamRead++
+			} else if isConfigWrite {
+				configStatuses.DownstreamWrite++
+			}
+
+		} else {
+
+			if isConfigRead {
+				configStatuses.UpstreamRead++
+			} else if isConfigWrite {
+				configStatuses.UpstreamWrite++
+			}
+
 		}
+
+	} else if isData {
+
+		dataStatuses.Total++
+
+		if packet.ValidParity() {
+			dataStatuses.ValidParity++
+		} else {
+			dataStatuses.InvalidParity++
+		}
+
+		if packet.Downstream() {
+			dataStatuses.Downstream++
+		} else {
+			dataStatuses.Upstream++
+		}
+
 	} else {
-		dataStatuses.Upstream++
-		if isConfigRead {
-			configStatuses.UpstreamRead++
-		} else if isConfigWrite {
-			configStatuses.UpstreamWrite++
-		}
+		otherStatuses++
 	}
 
 	// Update monitor
 	m10s.DataStatusCountsPerChannel[channel] = dataStatuses
 	m10s.ConfigStatusCountsPerChannel[channel] = configStatuses
+	m10s.OtherStatusCountsPerChannel[channel] = otherStatuses
 
 }
 

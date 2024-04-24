@@ -64,6 +64,17 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
+	for ioChannel, counts := range m.OtherStatusCounts {
+		point = makePoint("other_statuses_rates")
+
+		point.AddTag("io_group", strconv.Itoa(int(ioChannel.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(ioChannel.IoChannel))))
+		point.AddTag("io_channel", strconv.Itoa(int(ioChannel.IoChannel)))
+
+		point.AddField("total", float64(counts)/timeDiff)
+		writeAPI.WritePoint(point)
+	}
+
 	// fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_chip")
 
 	for chip, counts := range m.DataStatusCountsPerChip {
@@ -98,6 +109,18 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
 		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
+		writeAPI.WritePoint(point)
+	}
+
+	for chip, counts := range m.OtherStatusCountsPerChip {
+		point = makePoint("other_statuses_rates_per_chip")
+
+		point.AddTag("io_group", strconv.Itoa(int(chip.IoGroup)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(chip.IoChannel))))
+		point.AddTag("io_channel", strconv.Itoa(int(chip.IoChannel)))
+		point.AddTag("chip", strconv.Itoa(int(chip.ChipID)))
+
+		point.AddField("total", float64(counts)/timeDiff)
 		writeAPI.WritePoint(point)
 	}
 
@@ -236,6 +259,20 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
 		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
 		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
+
+		writeAPI.WritePoint(point)
+	}
+
+	for channel, counts := range m10s.OtherStatusCountsPerChannel {
+		point = makePoint("other_statuses_rates_per_channel")
+
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+
+		point.AddField("total", float64(counts)/timeDiff)
 
 		writeAPI.WritePoint(point)
 	}

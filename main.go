@@ -26,6 +26,11 @@ type Norms struct {
 	Freq float64
 }
 
+type DLOptions struct {
+	RateThreshold float64
+	Freq          float64
+}
+
 var PacmanURL []string
 var PacmanIog []string
 var PacmanIoJson string
@@ -36,6 +41,7 @@ var GeometryFileMod013 string
 var GeometryFileMod2 string
 var UseSingleCube bool
 var PlotNorms Norms
+var DisabledListOptions DLOptions
 
 var cmd = cobra.Command{
 	Use:   "pacmon",
@@ -43,13 +49,14 @@ var cmd = cobra.Command{
 	Run:   run,
 }
 
-func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNorms Norms, client influxdb2.Client, wg *sync.WaitGroup) {
+func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNorms Norms, disabledListOptions DLOptions, client influxdb2.Client, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
 	monitor := NewMonitor()
 	monitor10s := NewMonitor10s()
 	monitorPlots := NewMonitorPlots()
+	disabledListMonitor := NewDisabledListMonitor()
 	syncMonitor := NewSyncMonitor()
 	trigMonitor := NewTrigMonitor()
 
@@ -65,8 +72,10 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 	last := time.Now()
 	now10s := time.Now()
 	nowPlots := time.Now()
+	nowDisabledList := time.Now()
 	last10s := time.Now()
 	lastPlots := time.Now()
+	lastDisabledList := time.Now()
 
 	for {
 
@@ -88,6 +97,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			monitor.ProcessWord(word, ioGroup)
 			monitor10s.ProcessWord(word, ioGroup)
 			monitorPlots.ProcessWord(word, ioGroup)
+			disabledListMonitor.ProcessWord(word, ioGroup)
 
 			syncMonitor.ProcessWord(word, ioGroup)
 			trigMonitor.ProcessWord(word, ioGroup)
@@ -123,6 +133,13 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
 			monitorPlots = NewMonitorPlots() // Reset monitor
 			lastPlots = nowPlots
+		}
+
+		if time.Since(lastDisabledList).Seconds() > disabledListOptions.Freq {
+			nowDisabledList = time.Now()
+			disabledListMonitor.WriteDisabledList(disabledListOptions.RateThreshold, time.Since(lastDisabledList).Seconds(), ioGroup)
+			disabledListMonitor = NewDisabledListMonitor() // Reset monitor
+			lastDisabledList = nowDisabledList
 		}
 
 	}
@@ -183,9 +200,9 @@ func run(cmd *cobra.Command, args []string) {
 			panic(err)
 		}
 		if ioGroup == 5 || ioGroup == 6 { // Module 2
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, client, &wg)
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, DisabledListOptions, client, &wg)
 		} else {
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, client, &wg)
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, DisabledListOptions, client, &wg)
 		}
 
 	}
@@ -215,6 +232,8 @@ func main() {
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
 	cmd.PersistentFlags().BoolVarP(&UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
+	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.Freq, "disable-list-freq", "d", 60., "Frequency of updating the disable list in seconds")
+	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.RateThreshold, "disable-list-threshold", "d", 5., "Threshold of the data rate for the disable list in Hz")
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)

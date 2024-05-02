@@ -103,6 +103,13 @@ type MonitorPlots struct {
 	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
 }
 
+type DisabledListMonitor struct {
+	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
+
+	TopHotChannels []ChannelKey
+	TopHotValues   []uint
+}
+
 type SyncMonitor struct {
 	IoGroup []uint8
 	Time    []uint32
@@ -149,6 +156,12 @@ func NewMonitorPlots() *MonitorPlots {
 	}
 }
 
+func NewDisabledListMonitor() *DisabledListMonitor {
+	return &DisabledListMonitor{
+		DataStatusCountsPerChannel: make(map[ChannelKey]DataStatusCounts),
+	}
+}
+
 func NewSyncMonitor() *SyncMonitor {
 	return &SyncMonitor{}
 }
@@ -175,6 +188,10 @@ func (mPlots *MonitorPlots) ProcessWord(word Word, ioGroup uint8) {
 
 func (sm *SyncMonitor) ProcessWord(word Word, ioGroup uint8) {
 	sm.RecordSync(word, ioGroup)
+}
+
+func (dlm *DisabledListMonitor) ProcessWord(word Word, ioGroup uint8) {
+	dlm.RecordStatuses(word, ioGroup)
 }
 
 func (tm *TrigMonitor) ProcessWord(word Word, ioGroup uint8) {
@@ -484,6 +501,49 @@ func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
 	mPlots.ADCMeanPerChannel[channel], mPlots.ADCRMSPerChannel[channel] = UpdateMeanRMS(mPlots.ADCMeanPerChannel[channel], mPlots.ADCRMSPerChannel[channel], mPlots.NPacketsPerChannel[channel], adc)
 	mPlots.NPacketsPerChannel[channel]++
 
+}
+
+func (dlm *DisabledListMonitor) RecordStatuses(word Word, ioGroup uint8) {
+	if word.Type != WordTypeData {
+		return
+	}
+
+	pacData := word.PacData()
+	packet := pacData.Packet
+
+	var channel ChannelKey
+	channel.IoGroup = ioGroup
+	channel.IoChannel = pacData.IoChannel
+	channel.ChipID = packet.Chip()
+	channel.ChannelID = packet.Channel()
+
+	// Get current values in monitor
+	dataStatuses := dlm.DataStatusCountsPerChannel[channel]
+
+	isData := packet.Type() == PacketTypeData
+
+	if isData {
+
+		dataStatuses.Total++
+
+		if packet.ValidParity() {
+			dataStatuses.ValidParity++
+		} else {
+			dataStatuses.InvalidParity++
+		}
+
+		if packet.Downstream() {
+			dataStatuses.Downstream++
+		} else {
+			dataStatuses.Upstream++
+		}
+
+	} else {
+		return
+	}
+
+	// Update monitor
+	dlm.DataStatusCountsPerChannel[channel] = dataStatuses
 }
 
 func (sm *SyncMonitor) RecordSync(word Word, ioGroup uint8) {

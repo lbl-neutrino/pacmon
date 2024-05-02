@@ -233,7 +233,7 @@ func main() {
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
 	cmd.PersistentFlags().BoolVarP(&UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
 	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.Freq, "disable-list-freq", "d", 60., "Frequency of updating the disable list in seconds")
-	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.RateThreshold, "disable-list-threshold", "d", 5., "Threshold of the data rate for the disable list in Hz")
+	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.RateThreshold, "disable-list-threshold", "t", 5., "Threshold of the data rate for the disable list in Hz")
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)

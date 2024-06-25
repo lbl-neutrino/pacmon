@@ -37,8 +37,10 @@ var PacmanIoJson string
 var InfluxURL string
 var InfluxOrg string
 var InfluxBucket string
-var GeometryFileMod013 string
+var GeometryFileMod0 string
+var GeometryFileMod1 string
 var GeometryFileMod2 string
+var GeometryFileMod3 string
 var UseSingleCube bool
 var PlotNorms Norms
 var DisabledListOptions DLOptions
@@ -184,11 +186,13 @@ func run(cmd *cobra.Command, args []string) {
 		fmt.Println("Using --pacman-url and --pacman-iog options")
 	}
 
-	geometryMod013 := LoadGeometry(GeometryFileMod013)
+	geometryMod0 := LoadGeometry(GeometryFileMod0)
+	geometryMod1 := LoadGeometry(GeometryFileMod1)
 	geometryMod2 := LoadGeometry(GeometryFileMod2)
+	geometryMod3 := LoadGeometry(GeometryFileMod3)
 
 	if UseSingleCube {
-		geometryMod013 = LoadGeometry("layout/geometry_singlecube.json")
+		geometryMod0 = LoadGeometry("layout/geometry_singlecube.json")
 	}
 
 	wg.Add(len(PacmanURL))
@@ -199,12 +203,17 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			panic(err)
 		}
-		if ioGroup == 5 || ioGroup == 6 { // Module 2
+		if ioGroup == 1 || ioGroup == 2 { // Module 0
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod0, PlotNorms, DisabledListOptions, client, &wg)
+		} else if ioGroup == 3 || ioGroup == 4 { // Module 1
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod1, PlotNorms, DisabledListOptions, client, &wg)
+		} else if ioGroup == 5 || ioGroup == 6 { // Module 2
 			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, DisabledListOptions, client, &wg)
-		} else {
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod013, PlotNorms, DisabledListOptions, client, &wg)
+		} else if ioGroup == 7 || ioGroup == 8 { // Module 3
+			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod3, PlotNorms, DisabledListOptions, client, &wg)
+		} else { // Shouldn't get here
+			fmt.Println("io_group not between 1 and 8.")
 		}
-
 	}
 
 	wg.Wait()
@@ -223,10 +232,14 @@ func main() {
 		"InfluxDB bucket")
 	cmd.PersistentFlags().StringVar(&PacmanIoJson, "pacman-config", "",
 		"JSON configuration file of the IO instead of --pacman-url and --pacman-iog")
-	cmd.PersistentFlags().StringVar(&GeometryFileMod013, "geometry-mod013", "layout/geometry_mod013.json",
-		"JSON file with the layout of Modules 0, 1 and 3 (io_group = 1,2,3,4,7,8)")
-	cmd.PersistentFlags().StringVar(&GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2.json",
+	cmd.PersistentFlags().StringVar(&GeometryFileMod0, "geometry-mod0", "layout/geometry_mod0_v4.json",
+		"JSON file with the layout of Module 0 (io_group = 1,2)")
+	cmd.PersistentFlags().StringVar(&GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2_v4.json",
 		"JSON file with the layout of Module 2 (io_group = 5,6)")
+	cmd.PersistentFlags().StringVar(&GeometryFileMod1, "geometry-mod1", "layout/geometry_mod1_v4.json",
+		"JSON file with the layout of Module 1 (io_group = 3,4)")
+	cmd.PersistentFlags().StringVar(&GeometryFileMod3, "geometry-mod3", "layout/geometry_mod3_v4.json",
+		"JSON file with the layout of Module 3 (io_group =  7,8)")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Freq, "plot-freq", "f", 30., "Frequency of updating plots in seconds")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
 	cmd.PersistentFlags().Float64VarP(&PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")

@@ -29,7 +29,7 @@ upon login.
 ``` bash
 git clone https://github.com/lbl-neutrino/pacmon.git
 cd pacmon
-go build -o pacmon .
+go build -o pacmon ./cmd/pacmon
 ```
 
 This will create the `pacmon` executable.

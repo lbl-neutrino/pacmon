@@ -1,5 +1,9 @@
 package main
 
+import (
+	. "larpix/pacmon/pkg"
+)
+
 type DataStatusCounts struct {
 	Total         uint
 	ValidParity   uint

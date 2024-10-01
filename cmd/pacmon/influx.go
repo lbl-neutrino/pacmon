@@ -7,6 +7,8 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	api "github.com/influxdata/influxdb-client-go/v2/api"
 	write "github.com/influxdata/influxdb-client-go/v2/api/write"
+
+	. "larpix/pacmon/pkg"
 )
 
 func IoChannelToTileId(ioChannel int) int {

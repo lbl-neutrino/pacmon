@@ -13,6 +13,8 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	zmq "github.com/pebbe/zmq4"
 	cobra "github.com/spf13/cobra"
+
+	. "larpix/pacmon/pkg"
 )
 
 type IoConfig struct {

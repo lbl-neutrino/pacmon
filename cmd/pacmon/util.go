@@ -4,6 +4,8 @@ import (
 	// "encoding/binary"
 	"math"
 	"sort"
+
+	. "larpix/pacmon/pkg"
 )
 
 func Parity64(data Packet) byte {

@@ -1,4 +1,4 @@
-module mjkramer/pacmon
+module larpix/pacmon
 
 go 1.21.4
 

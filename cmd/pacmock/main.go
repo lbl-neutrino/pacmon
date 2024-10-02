@@ -58,7 +58,7 @@ func run(cmd *cobra.Command, args []string) {
 		msg := Msg{
 			Header: MsgHeader{
 				Type:      MsgTypeData,
-				Timestamp: 12345678,
+				Timestamp: uint32(time.Now().Unix()),
 				NumWords:  3,
 			},
 			Words: []Word{word, word, word},

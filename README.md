@@ -32,7 +32,8 @@ cd pacmon
 go build -o pacmon ./cmd/pacmon
 ```
 
-This will create the `pacmon` executable.
+This will create the `pacmon` executable. The `pacmock` mock PACMAN server can
+be built analogously.
 
 ## Usage
 

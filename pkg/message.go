@@ -59,6 +59,9 @@ var PacketTypeMap = map[PacketType]WordType {
 
 type IoChannel uint8
 
+// The Pac* structs are all 15 bytes
+// (the Content of a Word)
+
 type PacData struct {
 	IoChannel IoChannel
 	Timestamp uint32
@@ -113,32 +116,79 @@ func castWord[T any](w *Word) T {
 	return ret
 }
 
+func packWord[T any](wordtype WordType, t T) Word {
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.LittleEndian, &t)
+	var word Word
+	word.Type = wordtype
+	copy(word.Content[:], buf.Bytes())
+	return word
+	// return Word{
+	// 	Type: wordtype,
+	// 	Content: buf.Bytes(),
+	// }
+}
+
 func (w *Word) PacData() PacData {
 	return castWord[PacData](w)
 }
+
+func (t PacData) ToWord() Word {
+	return packWord[PacData](WordTypeData, t)
+}
+
 
 func (w *Word) PacTrig() PacTrig {
 	return castWord[PacTrig](w)
 }
 
+func (t PacTrig) ToWord() Word {
+	return packWord[PacTrig](WordTypeTrig, t)
+}
+
+
 func (w *Word) PacSync() PacSync {
 	return castWord[PacSync](w)
 }
+
+func (t PacSync) ToWord() Word {
+	return packWord[PacSync](WordTypeSync, t)
+}
+
 
 func (w *Word) PacPing() PacPing {
 	return castWord[PacPing](w)
 }
 
+func (t PacPing) ToWord() Word {
+	return packWord[PacPing](WordTypePing, t)
+}
+
+
 func (w *Word) PacWrite() PacWrite {
 	return castWord[PacWrite](w)
 }
+
+func (t PacWrite) ToWord() Word {
+	return packWord[PacWrite](WordTypeWrite, t)
+}
+
 
 func (w *Word) PacRead() PacRead {
 	return castWord[PacRead](w)
 }
 
+func (t PacRead) ToWord() Word {
+	return packWord[PacRead](WordTypeRead, t)
+}
+
+
 func (w *Word) PacError() PacError {
 	return castWord[PacError](w)
+}
+
+func (t PacError) ToWord() Word {
+	return packWord[PacError](WordTypeError, t)
 }
 
 type MsgHeader struct {			// [8]byte
@@ -163,6 +213,19 @@ func (m *Msg) Read(r io.Reader) error {
 		word := Word{}
 		binary.Read(r, binary.LittleEndian, &word)
 		m.Words = append(m.Words, word)
+	}
+
+	return nil
+}
+
+func (m *Msg) Write(w io.Writer) error {
+	err := binary.Write(w, binary.LittleEndian, &m.Header)
+	if err != nil {
+		return err
+	}
+
+	for i := uint16(0); i < m.Header.NumWords; i++ {
+		binary.Write(w, binary.LittleEndian, &m.Words[i])
 	}
 
 	return nil

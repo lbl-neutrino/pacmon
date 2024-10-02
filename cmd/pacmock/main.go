@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	. "larpix/pacmon/pkg"
@@ -11,20 +13,29 @@ import (
 	cobra "github.com/spf13/cobra"
 )
 
-var cmd = cobra.Command{
-	Use: "pacmock",
-	Short: "PACMAN mock data server",
-	Run: run,
+var gOptions struct {
+	Port uint16
+	Seed int64
 }
 
+var gCmd = cobra.Command{
+	Use:   "pacmock",
+	Short: "PACMAN mock data server",
+	Run:   run,
+}
+
+var gRandom *rand.Rand
+
 func run(cmd *cobra.Command, args []string) {
+	gRandom = rand.New(rand.NewSource(gOptions.Seed))
+
 	socket, err := zmq.NewSocket(zmq.PUB)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer socket.Close()
 
-	socket.Bind("tcp://*:1234")
+	socket.Bind(fmt.Sprintf("tcp://*:%d", gOptions.Port))
 
 	var buf bytes.Buffer
 
@@ -41,14 +52,14 @@ func run(cmd *cobra.Command, args []string) {
 		word := PacData{
 			IoChannel: 4,
 			Timestamp: 987700,
-			Packet: p,
+			Packet:    p,
 		}.ToWord()
 
 		msg := Msg{
 			Header: MsgHeader{
-				Type: MsgTypeData,
+				Type:      MsgTypeData,
 				Timestamp: 12345678,
-				NumWords: 3,
+				NumWords:  3,
 			},
 			Words: []Word{word, word, word},
 		}
@@ -61,7 +72,13 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func main() {
-	if err := cmd.Execute(); err != nil {
+	gCmd.PersistentFlags().Uint16VarP(&gOptions.Port, "port", "p", 6555,
+		"port to serve from")
+
+	gCmd.PersistentFlags().Int64VarP(&gOptions.Seed, "seed", "s", 0,
+		"random seed")
+
+	if err := gCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }

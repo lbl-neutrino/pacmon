@@ -46,7 +46,7 @@ func genPacket(lastTime uint32) (p Packet) {
 
 func genWord(lastTime uint32) Word {
 	p := genPacket(lastTime)
-	io_channel := p.Channel() / 40
+	io_channel := p.Chip() / 40
 	t_receipt := (p.Timestamp() + uint32(gRandom.Intn(50))) % 10000000
 
 	return PacData{

@@ -26,10 +26,11 @@ var gCmd = cobra.Command{
 
 var gRandom *rand.Rand
 
-func genPacket() (p Packet) {
+func genPacket(lastTime uint32) (p Packet) {
 	chip := uint8(gRandom.Intn(160))
 	channel := uint8(gRandom.Intn(64))
-	timestamp := gRandom.Uint32() % 10000000
+	delta_t := uint32(gRandom.Intn(100))
+	timestamp := lastTime + delta_t
 	adc := uint8(gRandom.Intn(256))
 
 	p.SetType(PacketTypeData)
@@ -43,8 +44,8 @@ func genPacket() (p Packet) {
 	return p
 }
 
-func genWord() Word {
-	p := genPacket()
+func genWord(lastTime uint32) Word {
+	p := genPacket(lastTime)
 	io_channel := p.Channel() / 40
 	t_receipt := (p.Timestamp() + uint32(gRandom.Intn(50))) % 10000000
 
@@ -56,18 +57,22 @@ func genWord() Word {
 }
 
 func genMsg() Msg {
-	numWords := (gRandom.Intn(20))
+	numWords := gRandom.Intn(20)
 	words := make([]Word, numWords)
 
+	startTime := gRandom.Uint32() % 10000000
+	lastTime := startTime
+
 	for i := 0; i < numWords; i++ {
-		words[i] = genWord()
+		words[i] = genWord(lastTime)
+		lastTime = words[i].PacData().Packet.Timestamp()
 	}
 
 	return Msg{
 		Header: MsgHeader{
 			Type:      MsgTypeData,
 			Timestamp: uint32(time.Now().Unix()),
-			NumWords:  3,
+			NumWords:  uint16(numWords),
 		},
 		Words: words,
 	}

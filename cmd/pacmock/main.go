@@ -26,6 +26,39 @@ var gCmd = cobra.Command{
 
 var gRandom *rand.Rand
 
+func genMsg() Msg {
+	chip := uint8(gRandom.Intn(160))
+	channel := uint8(gRandom.Intn(64))
+	io_channel := channel / 40
+	timestamp := gRandom.Uint32()
+	t_receipt := (timestamp + uint32(gRandom.Intn(50))) % 10000000
+	adc := uint8(gRandom.Intn(256))
+
+	var p Packet
+	p.SetType(PacketTypeData)
+	p.SetChip(chip)
+	p.SetChannel(channel)
+	p.SetDownstream(true)
+	p.SetTimestamp(timestamp)
+	p.SetData(adc)
+	p.UpdateParity()
+
+	word := PacData{
+		IoChannel: IoChannel(io_channel),
+		Timestamp: t_receipt,
+		Packet:    p,
+	}.ToWord()
+
+	return Msg{
+		Header: MsgHeader{
+			Type:      MsgTypeData,
+			Timestamp: uint32(time.Now().Unix()),
+			NumWords:  3,
+		},
+		Words: []Word{word, word, word},
+	}
+}
+
 func run(cmd *cobra.Command, args []string) {
 	gRandom = rand.New(rand.NewSource(gOptions.Seed))
 
@@ -40,30 +73,7 @@ func run(cmd *cobra.Command, args []string) {
 	var buf bytes.Buffer
 
 	for {
-		var p Packet
-		p.SetType(PacketTypeData)
-		p.SetChip(23)
-		p.SetChannel(42)
-		p.SetDownstream(true)
-		p.SetTimestamp(987654)
-		p.SetData(123)
-		p.UpdateParity()
-
-		word := PacData{
-			IoChannel: 4,
-			Timestamp: 987700,
-			Packet:    p,
-		}.ToWord()
-
-		msg := Msg{
-			Header: MsgHeader{
-				Type:      MsgTypeData,
-				Timestamp: uint32(time.Now().Unix()),
-				NumWords:  3,
-			},
-			Words: []Word{word, word, word},
-		}
-
+		msg := genMsg()
 		msg.Write(&buf)
 		socket.SendBytes(buf.Bytes(), 0)
 		buf.Reset()

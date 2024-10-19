@@ -4,7 +4,7 @@ import argparse
 import json
 from collections import defaultdict
 
-_default_geometry_yaml = 'multi_tile_layout-2.3.16.yaml'
+_default_geometry_yaml = 'multi_tile_layout-3.0.40.yaml'
 _default_geometry_yaml_mod2 = 'multi_tile_layout-2.5.16.yaml'
 _default_outfile_path = 'geometry.json'
 
@@ -30,7 +30,6 @@ def main(geometry_yaml=_default_geometry_yaml, outfile_path=_default_outfile_pat
         chip_channel_to_position = geo['chip_channel_to_position']
         tile_orientations = geo['tile_orientations']
         tile_positions = geo['tile_positions']
-        tpc_centers = geo['tpc_centers']
         tile_indeces = geo['tile_indeces']
         xs = np.array(list(chip_channel_to_position.values()))[
             :, 0] * pixel_pitch
@@ -71,10 +70,10 @@ def main(geometry_yaml=_default_geometry_yaml, outfile_path=_default_outfile_pat
                     pixel_pitch + pixel_pitch / 2 - y_size / 2
 
                 x, y = _rotate_pixel((x, y), tile_orientation)
-                x += tile_positions[tile][2] + \
-                    tpc_centers[tile_indeces[tile][0]][0]
-                y += tile_positions[tile][1] + \
-                    tpc_centers[tile_indeces[tile][0]][1]
+                x += tile_positions[tile][2] 
+            
+                y += tile_positions[tile][1] 
+                    
 
                 geometry['{}-{}-{}-{}'.format(io_group, io_group_io_channel_to_tile[(
                     io_group, io_channel)], chip, channel)] = x, y

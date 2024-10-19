@@ -16,6 +16,8 @@ import (
 var gOptions struct {
 	Port uint16
 	Seed int64
+	SleepMSec float32
+	MaxWords uint
 }
 
 var gCmd = cobra.Command{
@@ -46,7 +48,7 @@ func genPacket(lastTime uint32) (p Packet) {
 
 func genWord(lastTime uint32) Word {
 	p := genPacket(lastTime)
-	io_channel := p.Channel() / 40
+	io_channel := p.Chip() / 40
 	t_receipt := (p.Timestamp() + uint32(gRandom.Intn(50))) % 10000000
 
 	return PacData{
@@ -57,7 +59,7 @@ func genWord(lastTime uint32) Word {
 }
 
 func genMsg() Msg {
-	numWords := gRandom.Intn(20)
+	numWords := gRandom.Intn(int(gOptions.MaxWords))
 	words := make([]Word, numWords)
 
 	startTime := gRandom.Uint32() % 10000000
@@ -93,10 +95,12 @@ func run(cmd *cobra.Command, args []string) {
 
 	for {
 		msg := genMsg()
+
 		msg.Write(&buf)
 		socket.SendBytes(buf.Bytes(), 0)
 		buf.Reset()
-		time.Sleep(100 * time.Millisecond)
+
+		time.Sleep(time.Duration(gOptions.SleepMSec) * time.Millisecond)
 	}
 }
 
@@ -106,6 +110,12 @@ func main() {
 
 	gCmd.PersistentFlags().Int64VarP(&gOptions.Seed, "seed", "s", 0,
 		"random seed")
+
+	gCmd.PersistentFlags().Float32VarP(&gOptions.SleepMSec, "sleep-msec", "z", 100,
+		"milliseconds between messages")
+
+	gCmd.PersistentFlags().UintVarP(&gOptions.MaxWords, "max-words", "m", 100,
+		"seconds between messages")
 
 	if err := gCmd.Execute(); err != nil {
 		log.Fatal(err)

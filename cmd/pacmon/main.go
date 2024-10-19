@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -178,7 +179,11 @@ func run(cmd *cobra.Command, args []string) {
 
 		fmt.Println("Found the following PACMANs vs. IO groups: ")
 		for _, iog := range config.IoGroupPacmanURL {
-			PacmanURL = append(PacmanURL, fmt.Sprintf("tcp://%s:5556", iog[1].(string)))
+			url := iog[1].(string)
+			if !strings.Contains(url, ":") {
+				url = url + ":5556"
+			}
+			PacmanURL = append(PacmanURL, fmt.Sprintf("tcp://%s", url))
 			PacmanIog = append(PacmanIog, strconv.Itoa(int(iog[0].(float64))))
 			fmt.Println("\tURL: ", PacmanURL[len(PacmanURL)-1], " - io_group = ", PacmanIog[len(PacmanIog)-1])
 		}

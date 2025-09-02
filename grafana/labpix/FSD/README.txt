@@ -1,0 +1,1 @@
+For whatever reason, Grafana refused to export these "for sharing externally", which means that the Influx data source ID is hardcoded (ab09fd5d-b43a-4a4b-9893-10664ed0a0b1). It will need to be searched/replaced with the uid of the new InfluxDB, which can be determined, for example, by looking at the URL of the data source's config page in Grafana.

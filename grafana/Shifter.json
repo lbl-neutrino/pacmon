@@ -1,4 +1,1640 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_INFLUXDB",
+      "label": "influxdb",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    },
+    {
+      "name": "DS_EXPRESSION",
+      "label": "Expression",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "__expr__"
+    }
+  ],
+  "__elements": {
+    "adqgvi0o0acxsc": {
+      "name": "Data Rate by Pacman (10s mean)",
+      "uid": "adqgvi0o0acxsc",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "Mean over 10s of Data Rate (expressed as packets per second, p/s) by pacman. Y-axis is log base 2. Yellow/Red threasholds = 30k/300k packets/s. The Data Rate sent to InfluxDB is sent by IO_channel. To get the Data Rate for the full tile we have to sum all of the 32 IO_channels in a particular pacman. To get the 10s mean we sum all of the IO_channels over a 10 second period and then divide by 10. ",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "log": 2,
+                "type": "log"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "dashed+area"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "semi-dark-blue",
+                  "value": null
+                },
+                {
+                  "color": "semi-dark-yellow",
+                  "value": 30000
+                },
+                {
+                  "color": "semi-dark-red",
+                  "value": 300000
+                }
+              ]
+            },
+            "unit": "pps"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "alias": "P1",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "10s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "data_statuses_rates",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "A",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "total"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "sum"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "alias": "P2",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "10s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "data_statuses_rates",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "B",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "total"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "sum"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "alias": "P3",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "10s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "data_statuses_rates",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "C",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "total"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "sum"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "alias": "P4",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "10s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "data_statuses_rates",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "D",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "total"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "sum"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "4"
+              }
+            ]
+          },
+          {
+            "datasource": {
+              "name": "Expression",
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "$A/10",
+            "hide": false,
+            "refId": "I",
+            "type": "math"
+          },
+          {
+            "datasource": {
+              "name": "Expression",
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "$B/10",
+            "hide": false,
+            "refId": "J",
+            "type": "math"
+          },
+          {
+            "datasource": {
+              "name": "Expression",
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "$C/10",
+            "hide": false,
+            "refId": "K",
+            "type": "math"
+          },
+          {
+            "datasource": {
+              "name": "Expression",
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "$D/10",
+            "hide": false,
+            "refId": "L",
+            "type": "math"
+          }
+        ],
+        "title": "Data Rate by Pacman (10s mean)",
+        "transformations": [
+          {
+            "id": "concatenate",
+            "options": {
+              "frameNameLabel": "frame",
+              "frameNameMode": "drop"
+            }
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "P1": true,
+                "P2": true,
+                "P3": true,
+                "P4": true,
+                "P5": true,
+                "P6": true,
+                "P7": true,
+                "P8": true,
+                "Time": false
+              },
+              "includeByName": {},
+              "indexByName": {},
+              "renameByName": {
+                "I": "P1",
+                "J": "P2",
+                "K": "P3",
+                "L": "P4",
+                "M": "P5",
+                "N": "P6",
+                "O": "P7",
+                "P": "P8"
+              }
+            }
+          }
+        ],
+        "transparent": true,
+        "type": "timeseries"
+      }
+    },
+    "de729b46-ea08-48b3-bc48-85794936fbb2": {
+      "name": "Sync Packets",
+      "uid": "de729b46-ea08-48b3-bc48-85794936fbb2",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "Each pacman should acknowledge reception of a 1Hz sync signal. Missing acknowledgements in particular Pacmen may indicate a problem in those pacmen. If the signal is missing from all Pacmen it may indicate a problem with the sync pulse transmission.  ",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "dark-blue",
+              "mode": "thresholds"
+            },
+            "custom": {
+              "fillOpacity": 26,
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineWidth": 2,
+              "spanNulls": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "transparent",
+                  "value": null
+                },
+                {
+                  "color": "semi-dark-blue",
+                  "value": 0.001
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": []
+        },
+        "options": {
+          "alignValue": "left",
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "mergeValues": false,
+          "rowHeight": 1,
+          "showValue": "never",
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "alias": "P1",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "sync",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "A",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "sync"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "count"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "alias": "P2",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "sync",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "I",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "sync"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "count"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "alias": "P3",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "sync",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "J",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "sync"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "count"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "alias": "P4",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "sync",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "K",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "sync"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "count"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=",
+                "value": "4"
+              }
+            ]
+          }
+        ],
+        "title": "Sync Pulse",
+        "transparent": true,
+        "type": "state-timeline"
+      }
+    },
+    "cdibswnshjx8gf": {
+      "name": "Processor Temperature",
+      "uid": "cdibswnshjx8gf",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "Temps > 90C will shut processor down",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": true,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "dashed+area"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "semi-dark-red",
+                  "value": null
+                },
+                {
+                  "color": "dark-blue",
+                  "value": 10
+                },
+                {
+                  "color": "semi-dark-yellow",
+                  "value": 75
+                },
+                {
+                  "color": "semi-dark-red",
+                  "value": 85
+                }
+              ]
+            },
+            "unit": "celsius"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "$__interval"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "measurement": "pacman_processor_temperature",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "A",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "temperature"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": []
+          }
+        ],
+        "title": "Processor Temperature",
+        "transformations": [
+          {
+            "id": "concatenate",
+            "options": {
+              "frameNameLabel": "frame",
+              "frameNameMode": "drop"
+            }
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "includeByName": {},
+              "indexByName": {},
+              "renameByName": {
+                "pacman_processor_temperature.mean { io_group: 1 }": "P1",
+                "pacman_processor_temperature.mean { io_group: 2 }": "P2",
+                "pacman_processor_temperature.mean { io_group: 3 }": "P3",
+                "pacman_processor_temperature.mean { io_group: 4 }": "P4",
+                "pacman_processor_temperature.mean { io_group: 5 }": "P5",
+                "pacman_processor_temperature.mean { io_group: 6 }": "P6",
+                "pacman_processor_temperature.mean { io_group: 7 }": "P7",
+                "pacman_processor_temperature.mean { io_group: 8 }": "P8"
+              }
+            }
+          }
+        ],
+        "transparent": true,
+        "type": "timeseries"
+      }
+    },
+    "cdjfma4ioqigwe": {
+      "name": "Data File Size and Location",
+      "uid": "cdjfma4ioqigwe",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "SVGBaseFix": true,
+          "add100Percentage": true,
+          "calcsMutation": "standard",
+          "centerAlignContent": true,
+          "codeData": "{\n  \"text\": \"Random text\"\n}",
+          "css": "",
+          "dynamicData": false,
+          "dynamicFieldDisplayValues": false,
+          "dynamicHtmlGraphics": false,
+          "dynamicProps": false,
+          "html": "<img src=\"\" id=\"htmlgraphics-image\">",
+          "onInit": "function updateImage(){\n  const imgElement = htmlNode.getElementById('htmlgraphics-image')\n  if (imgElement){\n    imgElement.src='https://portal.nersc.gov/project/dune/data/2x2/DQM/Transfer/last_file_info.png?' + new Date().getTime();\n  }\n}\nsetInterval(updateImage, 1000)",
+          "onInitOnResize": false,
+          "onRender": "",
+          "overflow": "visible",
+          "panelupdateOnMount": true,
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull",
+              "last",
+              "firstNotNull",
+              "first",
+              "min",
+              "max",
+              "mean",
+              "sum",
+              "count",
+              "range",
+              "delta",
+              "step",
+              "diff",
+              "logmin",
+              "allIsZero",
+              "allIsNull",
+              "diffperc"
+            ]
+          },
+          "renderOnMount": true,
+          "rootCSS": "",
+          "useGrafanaScrollbar": true
+        },
+        "pluginVersion": "10.4.0",
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "refId": "A"
+          }
+        ],
+        "title": "Data File Size and Location",
+        "transparent": true,
+        "type": "gapit-htmlgraphics-panel"
+      }
+    },
+    "b19411eb-5f2a-456e-a877-abc45a058841": {
+      "name": "Blank line",
+      "uid": "b19411eb-5f2a-456e-a877-abc45a058841",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "",
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "",
+          "mode": "markdown"
+        },
+        "pluginVersion": "10.3.3",
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "refId": "A"
+          }
+        ],
+        "transparent": true,
+        "type": "text"
+      }
+    },
+    "bdhqxv1c1fmdcc": {
+      "name": "Time Series: VDDA",
+      "uid": "bdhqxv1c1fmdcc",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "Voltage supplied to the Analogue side of the ADC to power chage collection signals from pixels to the chip. Acceptable range is (1.8 to 1.9V)",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": true,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "dashed+area"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "semi-dark-red",
+                  "value": null
+                },
+                {
+                  "color": "dark-blue",
+                  "value": 1700
+                },
+                {
+                  "color": "red",
+                  "value": 2000
+                }
+              ]
+            },
+            "unit": "mvolt"
+          },
+          "overrides": []
+        },
+        "maxPerRow": 2,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "alias": "T1",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "A",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "alias": "T2",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "B",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "alias": "T3",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "C",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "alias": "T4",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "D",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "4"
+              }
+            ]
+          },
+          {
+            "alias": "T5",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "E",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "5"
+              }
+            ]
+          },
+          {
+            "alias": "T6",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "F",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "6"
+              }
+            ]
+          },
+          {
+            "alias": "T7",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "G",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "7"
+              }
+            ]
+          },
+          {
+            "alias": "T8",
+            "datasource": {
+              "type": "influxdb",
+              "uid": "ab09fd5d-b43a-4a4b-9893-10664ed0a0b1"
+            },
+            "groupBy": [
+              {
+                "params": [
+                  "1s"
+                ],
+                "type": "time"
+              },
+              {
+                "params": [
+                  "io_group::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "tile::tag"
+                ],
+                "type": "tag"
+              },
+              {
+                "params": [
+                  "null"
+                ],
+                "type": "fill"
+              }
+            ],
+            "hide": false,
+            "measurement": "pacman_power",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "H",
+            "resultFormat": "time_series",
+            "select": [
+              [
+                {
+                  "params": [
+                    "vdda"
+                  ],
+                  "type": "field"
+                },
+                {
+                  "params": [],
+                  "type": "mean"
+                }
+              ]
+            ],
+            "tags": [
+              {
+                "key": "io_group::tag",
+                "operator": "=~",
+                "value": "/^$pacman$/"
+              },
+              {
+                "condition": "AND",
+                "key": "tile::tag",
+                "operator": "=",
+                "value": "8"
+              }
+            ]
+          }
+        ],
+        "title": "P$pacman: VDDA",
+        "transparent": true,
+        "type": "timeseries"
+      }
+    },
+    "a54023b8-06e0-4966-b7e1-b3d3aec9c453": {
+      "name": "List: Dashboards and Links",
+      "uid": "a54023b8-06e0-4966-b7e1-b3d3aec9c453",
+      "kind": 1,
+      "model": {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_INFLUXDB}"
+        },
+        "description": "",
+        "options": {
+          "folderUID": "ed709d9d-b6d3-44cc-96a0-ed860b97f351",
+          "includeVars": false,
+          "keepTime": false,
+          "maxItems": 6,
+          "query": "",
+          "showHeadings": false,
+          "showRecentlyViewed": false,
+          "showSearch": true,
+          "showStarred": false,
+          "tags": []
+        },
+        "pluginVersion": "10.4.0",
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "e1f3fad3-73db-4377-9f77-d6487e8da2b0"
+            },
+            "refId": "A"
+          }
+        ],
+        "transparent": true,
+        "type": "dashlist"
+      }
+    }
+  },
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "__expr__",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "candlestick",
+      "name": "Candlestick",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.2.0"
+    },
+    {
+      "type": "panel",
+      "id": "histogram",
+      "name": "Histogram",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "Text",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -18,7 +1654,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": null,
   "links": [
     {
       "asDropdown": false,
@@ -85,10 +1721,9 @@
       },
       "id": 621,
       "libraryPanel": {
-        "name": "Data Rate by Pacman (10s mean)",
-        "uid": "adqgvi0o0acxsc"
-      },
-      "title": "Data Rate by Pacman (10s mean)"
+        "uid": "adqgvi0o0acxsc",
+        "name": "Data Rate by Pacman (10s mean)"
+      }
     },
     {
       "gridPos": {
@@ -99,10 +1734,9 @@
       },
       "id": 462,
       "libraryPanel": {
-        "name": "Sync Packets",
-        "uid": "de729b46-ea08-48b3-bc48-85794936fbb2"
-      },
-      "title": "Sync Pulse"
+        "uid": "de729b46-ea08-48b3-bc48-85794936fbb2",
+        "name": "Sync Packets"
+      }
     },
     {
       "gridPos": {
@@ -113,15 +1747,14 @@
       },
       "id": 466,
       "libraryPanel": {
-        "name": "Processor Temperature",
-        "uid": "cdibswnshjx8gf"
-      },
-      "title": "Processor Temperature"
+        "uid": "cdibswnshjx8gf",
+        "name": "Processor Temperature"
+      }
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "These boxes check to see if VDDD and IDDD are within threshold ranges. Digital voltage (VDDD) is supplied to digital side of ADC to power data transfer to and from chips. Acceptable range is (1.5 to 1.8V) for all pacmen except P5-P6 whose acceptable range is (1.1 to 1.3V) - the exception is needed because of differences between versions of the chips used (V2A versus V2B). Similarly IDDD is current supplied to the digital side. Thresholds are 350-750mA for all pacmen.  ",
       "gridPos": {
@@ -145,7 +1778,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "refId": "A"
         }
@@ -157,7 +1790,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -209,7 +1842,7 @@
           "alias": "VDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -262,7 +1895,7 @@
           "alias": "IDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -334,7 +1967,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "A",
           "hide": false,
@@ -363,7 +1996,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "B",
           "hide": false,
@@ -373,7 +2006,7 @@
         {
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "$C+$D",
           "hide": false,
@@ -448,7 +2081,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -509,7 +2142,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -556,7 +2189,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -604,7 +2237,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -652,7 +2285,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -700,7 +2333,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -748,7 +2381,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -796,7 +2429,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -844,7 +2477,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -896,7 +2529,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -957,7 +2590,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1004,7 +2637,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1052,7 +2685,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1100,7 +2733,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1148,7 +2781,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1196,7 +2829,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1244,7 +2877,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1292,7 +2925,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1344,7 +2977,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1405,7 +3038,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1452,7 +3085,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1500,7 +3133,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1548,7 +3181,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1596,7 +3229,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1644,7 +3277,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1692,7 +3325,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1740,7 +3373,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1792,7 +3425,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Is the absolute value of the change in VDDD over the last hour less than 10%? Blue is yes. Red is no.  Digital voltage (VDDD) is supplied to digital side of ADC to power data transfer to and from chips. ",
       "gridPos": {
@@ -1816,7 +3449,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "refId": "A"
         }
@@ -1828,7 +3461,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1914,7 +3547,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -1954,7 +3587,7 @@
         {
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "$A/60",
           "hide": false,
@@ -1987,7 +3620,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2048,7 +3681,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2095,7 +3728,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2143,7 +3776,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2191,7 +3824,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2239,7 +3872,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2287,7 +3920,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2335,7 +3968,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2383,7 +4016,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2435,7 +4068,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2487,7 +4120,7 @@
           "alias": "VDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2540,7 +4173,7 @@
           "alias": "IDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2612,7 +4245,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "A",
           "hide": false,
@@ -2641,7 +4274,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "B",
           "hide": false,
@@ -2651,7 +4284,7 @@
         {
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "$C+$D",
           "hide": false,
@@ -2726,7 +4359,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2778,7 +4411,7 @@
           "alias": "VDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2831,7 +4464,7 @@
           "alias": "IDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -2903,7 +4536,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "A",
           "hide": false,
@@ -2932,7 +4565,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "B",
           "hide": false,
@@ -2942,7 +4575,7 @@
         {
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "$C+$D",
           "hide": false,
@@ -3017,7 +4650,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -3069,7 +4702,7 @@
           "alias": "VDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -3122,7 +4755,7 @@
           "alias": "IDDD",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -3194,7 +4827,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "A",
           "hide": false,
@@ -3223,7 +4856,7 @@
           ],
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "B",
           "hide": false,
@@ -3233,7 +4866,7 @@
         {
           "datasource": {
             "type": "__expr__",
-            "uid": "__expr__"
+            "uid": "${DS_EXPRESSION}"
           },
           "expression": "$C+$D",
           "hide": false,
@@ -3314,10 +4947,9 @@
       },
       "id": 616,
       "libraryPanel": {
-        "name": "Data File Size and Location",
-        "uid": "cdjfma4ioqigwe"
-      },
-      "title": "Data File Size and Location"
+        "uid": "cdjfma4ioqigwe",
+        "name": "Data File Size and Location"
+      }
     },
     {
       "collapsed": false,
@@ -3335,7 +4967,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Mean over 10s of data rates (expressed as packet count per second) by tile. Y-axis is log base 2. Yellow/Red thresholds = 5kps / 50kps",
       "fieldConfig": {
@@ -3422,7 +5054,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -3506,7 +5138,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Green bars are centered at Pixel-level Mean ADC value, the top/bottom of the bars are at Mean +/- RMS. All values are calculated over a 10s window.  Red thresholds are < 5 or > 254. Yellow threshold is 250",
       "gridPos": {
@@ -3530,7 +5162,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "refId": "A"
         }
@@ -3542,7 +5174,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Histogram shows distribution of Pixel-level ADC mean values over the global time window. The bucket size is 1. ADC values are recorded using 8 bits. A value of 255 indicates the signal maxed out. Consistent values at 255 (or below 5) may indicate thresholds are set too high (or low) .  All mean values in this histogram are calculated over a 10s window",
       "gridPos": {
@@ -3566,7 +5198,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "refId": "A"
         }
@@ -3578,7 +5210,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "gridPos": {
@@ -3602,7 +5234,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "refId": "A"
         }
@@ -3614,7 +5246,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -3715,7 +5347,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -3768,7 +5400,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -3856,7 +5488,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -3957,7 +5589,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -4010,7 +5642,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -4098,7 +5730,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -4162,7 +5794,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -4232,7 +5864,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -4297,7 +5929,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -4367,7 +5999,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Highest 100 pixel data packet rates (expressed as # packets per second - p/s) within a given pacman. Each value represents the  mean rate recorded over the last 30s. Yellow/Red thresholds = 1/5 p/s",
       "fieldConfig": {
@@ -4536,7 +6168,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -4707,7 +6339,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -4808,7 +6440,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -4861,7 +6493,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -4949,7 +6581,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -5050,7 +6682,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -5103,7 +6735,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -5191,7 +6823,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -5255,7 +6887,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -5325,7 +6957,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -5389,7 +7021,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -5459,7 +7091,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -5560,7 +7192,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -5613,7 +7245,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -5701,7 +7333,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -5802,7 +7434,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -5855,7 +7487,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -5943,7 +7575,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -6007,7 +7639,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -6077,7 +7709,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -6141,7 +7773,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -6211,7 +7843,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "gridPos": {
@@ -6235,7 +7867,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "refId": "A"
         }
@@ -6247,7 +7879,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "The highest 100 ADC mean values recorded over the last 30s. ADC values are recorded using 8 bits. A value of 255 indicates the ADC maxed out, which could mean we're missing information. This could require an expert to reset the threshold.  Yellow / Red thresholds = 250 / 254",
       "fieldConfig": {
@@ -6416,7 +8048,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -6587,7 +8219,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -6688,7 +8320,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -6741,7 +8373,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -6829,7 +8461,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -6930,7 +8562,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -6983,7 +8615,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -7071,7 +8703,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -7135,7 +8767,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -7205,7 +8837,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -7269,7 +8901,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -7338,9 +8970,8 @@
     },
     {
       "datasource": {
-        "default": true,
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -7441,7 +9072,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -7494,7 +9125,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -7581,9 +9212,8 @@
     },
     {
       "datasource": {
-        "default": true,
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -7684,7 +9314,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -7737,7 +9367,7 @@
           "alias": "rms",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -7824,9 +9454,8 @@
     },
     {
       "datasource": {
-        "default": true,
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -7890,7 +9519,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -7959,9 +9588,8 @@
     },
     {
       "datasource": {
-        "default": true,
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "",
       "fieldConfig": {
@@ -8025,7 +9653,7 @@
           "alias": "mean",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [],
           "measurement": "packet_adc_per_channel",
@@ -8101,15 +9729,14 @@
       },
       "id": 224,
       "libraryPanel": {
-        "name": "Blank line",
-        "uid": "b19411eb-5f2a-456e-a877-abc45a058841"
-      },
-      "title": ""
+        "uid": "b19411eb-5f2a-456e-a877-abc45a058841",
+        "name": "Blank line"
+      }
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Digital voltage supplied to digital side of ADC to power data transfer to and from chips. Acceptable range is (1.6 to 1.7V) for all pacmen except P5-P6 whose acceptable range is (1.15 to 1.25V) - the exception is needed because of differences between versions of the chips used (V2A versus V2B)",
       "fieldConfig": {
@@ -8206,7 +9833,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8271,7 +9898,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8337,7 +9964,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8403,7 +10030,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8469,7 +10096,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8535,7 +10162,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8601,7 +10228,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8667,7 +10294,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8743,15 +10370,14 @@
       },
       "id": 454,
       "libraryPanel": {
-        "name": "Time Series: VDDA",
-        "uid": "bdhqxv1c1fmdcc"
-      },
-      "title": "P$pacman: VDDA"
+        "uid": "bdhqxv1c1fmdcc",
+        "name": "Time Series: VDDA"
+      }
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Current supplied to digital side of ADC to power data transferred to and from the chip. Acceptable range is (400-700mA)",
       "fieldConfig": {
@@ -8840,7 +10466,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8905,7 +10531,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -8971,7 +10597,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9037,7 +10663,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9103,7 +10729,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9169,7 +10795,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9235,7 +10861,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9301,7 +10927,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9371,7 +10997,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "adyw93hlmdzpce"
+        "uid": "${DS_INFLUXDB}"
       },
       "description": "Current supplied to the analogue side of the ADC to power charge collection from pixel to the chip. Acceptable range for most pacmen (150-475mA), but P5 and P6 are distinct (because of distinct models of chips/pacmen) with thresholds (60-110)",
       "fieldConfig": {
@@ -9468,7 +11094,7 @@
           "alias": "T1",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9533,7 +11159,7 @@
           "alias": "T2",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9599,7 +11225,7 @@
           "alias": "T3",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9665,7 +11291,7 @@
           "alias": "T4",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9731,7 +11357,7 @@
           "alias": "T5",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9797,7 +11423,7 @@
           "alias": "T6",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9863,7 +11489,7 @@
           "alias": "T7",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -9929,7 +11555,7 @@
           "alias": "T8",
           "datasource": {
             "type": "influxdb",
-            "uid": "adyw93hlmdzpce"
+            "uid": "${DS_INFLUXDB}"
           },
           "groupBy": [
             {
@@ -10005,10 +11631,9 @@
       },
       "id": 126,
       "libraryPanel": {
-        "name": "List: Dashboards and Links",
-        "uid": "a54023b8-06e0-4966-b7e1-b3d3aec9c453"
-      },
-      "title": ""
+        "uid": "a54023b8-06e0-4966-b7e1-b3d3aec9c453",
+        "name": "List: Dashboards and Links"
+      }
     },
     {
       "gridPos": {
@@ -10019,10 +11644,9 @@
       },
       "id": 473,
       "libraryPanel": {
-        "name": "Blank line",
-        "uid": "b19411eb-5f2a-456e-a877-abc45a058841"
-      },
-      "title": ""
+        "uid": "b19411eb-5f2a-456e-a877-abc45a058841",
+        "name": "Blank line"
+      }
     }
   ],
   "refresh": "",

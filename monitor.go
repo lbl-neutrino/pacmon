@@ -90,6 +90,19 @@ type MonitorPlots struct {
 	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
 }
 
+type LightMonitor struct {
+	MultipleSiPMs bool
+	Time          uint32
+
+	TimeChannel map[uint32][]ChannelKey
+}
+
+type ChargeMonitor struct {
+	Time    []uint32
+	Channel []ChannelKey
+	ADC     []uint8
+}
+
 type SyncMonitor struct {
 	IoGroup []uint8
 	Time    []uint32
@@ -141,6 +154,14 @@ func NewTrigMonitor() *TrigMonitor {
 	return &TrigMonitor{}
 }
 
+func NewLightMonitor() *LightMonitor {
+	return &LightMonitor{}
+}
+
+func NewChargeMonitor() *ChargeMonitor {
+	return &ChargeMonitor{}
+}
+
 func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 	m.RecordType(word)
 	m.RecordStatuses(word, ioGroup)
@@ -163,6 +184,14 @@ func (sm *SyncMonitor) ProcessWord(word Word, ioGroup uint8) {
 
 func (tm *TrigMonitor) ProcessWord(word Word, ioGroup uint8) {
 	tm.RecordTrig(word, ioGroup)
+}
+
+func (lm *LightMonitor) ProcessWord(word Word, ioGroup uint8) {
+	lm.CheckSiPM(word, ioGroup)
+}
+
+func (cm *ChargeMonitor) ProcessWord(word Word, ioGroup uint8) {
+	cm.RecordADC(word, ioGroup)
 }
 
 func (m *Monitor) RecordType(word Word) {
@@ -381,6 +410,9 @@ func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
 	if !pacData.Packet.ValidParity() { // Skip invalid parity
 		return
 	}
+	if pacData.Packet.Type() != PacketTypeData { // Skip non-data
+		return
+	}
 	packet := pacData.Packet
 
 	var channel ChannelKey
@@ -409,4 +441,122 @@ func (tm *TrigMonitor) RecordTrig(word Word, ioGroup uint8) {
 		tm.Time = append(tm.Time, word.PacTrig().Timestamp)
 		tm.IoGroup = append(tm.IoGroup, ioGroup)
 	}
+}
+
+func (lm *LightMonitor) CheckSiPM(word Word, ioGroup uint8) {
+	if word.Type != WordTypeData {
+		return
+	}
+	pacData := word.PacData()
+	if !pacData.Packet.ValidParity() { // Skip invalid parity
+		return
+	}
+
+	packet := pacData.Packet
+
+	var channel ChannelKey
+	channel.IoGroup = ioGroup
+	channel.IoChannel = pacData.IoChannel
+	if channel.IoChannel != 5 {
+		return
+	}
+	channel.ChipID = packet.Chip()
+	if channel.ChipID != 11 {
+		return
+	}
+
+	channel.ChannelID = packet.Channel()
+	if channel.ChannelID != 0 {
+		return
+	}
+	if channel.ChannelID != 2 {
+		return
+	}
+	if channel.ChannelID != 4 {
+		return
+	}
+	if channel.ChannelID != 12 {
+		return
+	}
+	if channel.ChannelID != 14 {
+		return
+	}
+	if channel.ChannelID != 16 {
+		return
+	}
+	if channel.ChannelID != 18 {
+		return
+	}
+	if channel.ChannelID != 20 {
+		return
+	}
+	if channel.ChannelID != 30 {
+		return
+	}
+	if channel.ChannelID != 32 {
+		return
+	}
+	if channel.ChannelID != 44 {
+		return
+	}
+	if channel.ChannelID != 46 {
+		return
+	}
+	if channel.ChannelID != 48 {
+		return
+	}
+	if channel.ChannelID != 50 {
+		return
+	}
+	if channel.ChannelID != 52 {
+		return
+	}
+	if channel.ChannelID != 62 {
+		return
+	}
+
+	timestamp := packet.Timestamp()
+
+	lm.TimeChannel[timestamp] = append(lm.TimeChannel[timestamp], channel)
+
+	_, ok := lm.TimeChannel[timestamp]
+	if !ok {
+		lm.MultipleSiPMs = false
+		lm.Time = 0
+		lm.TimeChannel[timestamp] = append(lm.TimeChannel[timestamp], channel)
+	} else {
+		lm.TimeChannel[timestamp] = append(lm.TimeChannel[timestamp], channel)
+		lm.MultipleSiPMs = true
+		lm.Time = timestamp
+	}
+
+}
+func (cm *ChargeMonitor) RecordADC(word Word, ioGroup uint8) {
+	if word.Type != WordTypeData {
+		return
+	}
+	pacData := word.PacData()
+	if !pacData.Packet.ValidParity() { // Skip invalid parity
+		return
+	}
+
+	packet := pacData.Packet
+
+	var channel ChannelKey
+	channel.IoGroup = ioGroup
+	channel.IoChannel = pacData.IoChannel
+	if channel.IoChannel >= 5 {
+		return
+	}
+	channel.ChipID = packet.Chip()
+	if channel.ChipID < 11 || channel.ChipID > 111 {
+		return
+	}
+
+	channel.ChannelID = packet.Channel()
+
+	cm.Channel = append(cm.Channel, channel)
+	cm.Time = append(cm.Time, packet.Timestamp())
+	cm.ADC = append(cm.ADC, packet.Data())
+
 }

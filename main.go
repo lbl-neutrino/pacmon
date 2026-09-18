@@ -52,6 +52,8 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 	monitorPlots := NewMonitorPlots()
 	syncMonitor := NewSyncMonitor()
 	trigMonitor := NewTrigMonitor()
+	lightMonitor := NewLightMonitor()
+	chargeMonitor := NewChargeMonitor()
 
 	socket, err := zmq.NewSocket(zmq.SUB)
 	if err != nil {
@@ -60,7 +62,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 	socket.SetSubscribe("")
 	socket.Connect(singlePacmanURL)
 
-	writeAPI := client.WriteAPI(InfluxOrg, InfluxBucket)
+	//writeAPI := client.WriteAPI(InfluxOrg, InfluxBucket)
 	now := time.Now()
 	last := time.Now()
 	now10s := time.Now()
@@ -82,47 +84,61 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			log.Fatal(err)
 		}
 
-		msgTime := int64(msg.Header.Timestamp)
+		//msgTime := int64(msg.Header.Timestamp)
 
 		for _, word := range msg.Words {
+			//fmt.Println(word)
 			monitor.ProcessWord(word, ioGroup)
 			monitor10s.ProcessWord(word, ioGroup)
 			monitorPlots.ProcessWord(word, ioGroup)
 
 			syncMonitor.ProcessWord(word, ioGroup)
 			trigMonitor.ProcessWord(word, ioGroup)
+			lightMonitor.ProcessWord(word, ioGroup)
+			chargeMonitor.ProcessWord(word, ioGroup)
 		}
 
 		if len(syncMonitor.Time) > 0 {
-			syncMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
+			//syncMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
 			syncMonitor = NewSyncMonitor()
 		}
 
 		if len(trigMonitor.Time) > 0 {
-			trigMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
+			//trigMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
 			trigMonitor = NewTrigMonitor()
 		}
 
 		if time.Since(last).Seconds() > 1 {
 			now = time.Now()
-			monitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now.Sub(last).Seconds())
+			//monitor.WriteToInflux(writeAPI, now, now.Sub(last).Seconds())
 			monitor = NewMonitor() // Reset monitor
 			last = now
 		}
 
 		if time.Since(last10s).Seconds() > 10 {
 			now10s = time.Now()
-			monitor10s.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now10s.Sub(last10s).Seconds())
+			//monitor10s.WriteToInflux(writeAPI, now10s, now10s.Sub(last10s).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = now10s
 		}
 
 		if time.Since(lastPlots).Seconds() > plotNorms.Freq {
 			nowPlots = time.Now()
-			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
+			fmt.Println("Plotting")
+			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds(), UseSingleCube)
 			monitorPlots = NewMonitorPlots() // Reset monitor
 			lastPlots = nowPlots
 		}
+
+		// if lightMonitor.MultipleSiPMs {
+		// 	// Plot starting from lightMonitor.Time
+
+		// 	chargeMonitor.Plot(geometry, ioGroup, lightMonitor.Time)
+
+		// 	chargeMonitor = NewChargeMonitor()
+		// 	lightMonitor = NewLightMonitor()
+
+		// }
 
 	}
 }

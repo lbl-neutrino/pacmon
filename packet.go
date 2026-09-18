@@ -10,10 +10,10 @@ type Packet [8]byte
 type PacketType uint8
 
 const (
-	PacketTypeData PacketType = 0
-	PacketTypeError PacketType = 1
+	PacketTypeData  PacketType = 1
+	PacketTypeError PacketType = 0
 	PacketTypeWrite PacketType = 2
-	PacketTypeRead PacketType = 3
+	PacketTypeRead  PacketType = 3
 )
 
 func (p Packet) Type() PacketType {
@@ -36,7 +36,7 @@ func (p Packet) Timestamp() uint32 {
 }
 
 func (p Packet) First() bool {
-	return p[5] >> 7 == 1
+	return p[5]>>7 == 1
 }
 
 func (p Packet) Data() uint8 {
@@ -56,7 +56,7 @@ func (p Packet) SharedFifoFlags() uint8 {
 }
 
 func (p Packet) Downstream() bool {
-	return (p[7] >> 6) & 1 == 1
+	return (p[7]>>6)&1 == 1
 }
 
 func (p Packet) ParityBit() uint8 {
@@ -67,10 +67,10 @@ func (p Packet) ValidParity() bool {
 	onesCount := 0
 	for i, b := range p {
 		if i == 7 {
-			onesCount = onesCount + bits.OnesCount(uint(b & 0x7F)) // Skip parity bit
+			onesCount = onesCount + bits.OnesCount(uint(b&0x7F)) // Skip parity bit
 		} else {
 			onesCount = onesCount + bits.OnesCount(uint(b))
 		}
 	}
-	return (1 - (onesCount % 2)) == int(p.ParityBit())
+	return ((1 - (onesCount % 2)) == int(p.ParityBit())) && (p.Data() != 0)
 }

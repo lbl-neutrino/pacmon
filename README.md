@@ -11,7 +11,7 @@ loaded into an InfluxDB for further display using e.g. Grafana.
 First, install the toolchain for the Go programming language:
 
 ``` bash
-goURL="https://go.dev/dl/go1.21.4.linux-amd64.tar.gz"
+goURL="https://dl.google.com/go/go1.27.1.linux-amd64.tar.gz"
 mkdir -p ~/.local && curl -L "$goURL" | tar zxf - -C ~/.local
 ```
 

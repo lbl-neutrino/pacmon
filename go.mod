@@ -1,29 +1,36 @@
 module larpix/pacmon
 
-go 1.21.4
-
-require github.com/pebbe/zmq4 v1.2.10
+go 1.27.1
 
 require (
-	git.sr.ht/~sbinet/gg v0.5.0 // indirect
+	github.com/influxdata/influxdb-client-go/v2 v2.14.0
+	github.com/pebbe/zmq4 v1.4.0
+	github.com/spf13/cobra v1.10.2
+	gonum.org/v1/plot v0.17.0
+)
+
+require (
+	codeberg.org/go-fonts/liberation v0.6.0 // indirect
+	codeberg.org/go-latex/latex v0.3.0 // indirect
+	codeberg.org/go-pdf/fpdf v0.12.0 // indirect
+	git.sr.ht/~sbinet/gg v0.8.0 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
-	github.com/deepmap/oapi-codegen v1.12.4 // indirect
-	github.com/go-fonts/liberation v0.3.1 // indirect
-	github.com/go-latex/latex v0.0.0-20230307184459-12ec69307ad9 // indirect
-	github.com/go-pdf/fpdf v0.8.0 // indirect
+	github.com/deepmap/oapi-codegen v1.16.3 // indirect
+	github.com/go-fonts/liberation v0.3.3 // indirect
+	github.com/go-latex/latex v0.0.0-20250304174226-2790903426af // indirect
+	github.com/go-pdf/fpdf v0.9.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/influxdata/influxdb-client-go/v2 v2.12.4 // indirect
-	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
+	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
+	github.com/oapi-codegen/runtime v1.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spf13/cobra v1.8.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/image v0.11.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	gonum.org/v1/gonum v0.14.0 // indirect
-	gonum.org/v1/plot v0.14.0 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
+	golang.org/x/image v0.46.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	gonum.org/v1/gonum v0.16.0 // indirect
 )

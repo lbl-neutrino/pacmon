@@ -6,6 +6,7 @@ import time
 import h5py
 import numpy as np
 import zmq
+from tqdm import tqdm
 
 
 def run(args: argparse.Namespace, ctx: zmq.Context, f: h5py.File):
@@ -21,7 +22,7 @@ def run(args: argparse.Namespace, ctx: zmq.Context, f: h5py.File):
     socket = ctx.socket(zmq.PUB)
     socket.bind(f'tcp://*:{args.port}')
 
-    for msg in msgs:
+    for msg in tqdm(msgs):
         if t_offset:
             t_orig = int.from_bytes(msg[1:5], 'little')
             t_new = t_orig + t_offset

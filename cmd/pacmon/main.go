@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -14,6 +15,9 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	zmq "github.com/pebbe/zmq4"
 	cobra "github.com/spf13/cobra"
+
+	_ "net/http/pprof"
+	"github.com/felixge/fgprof"
 
 	. "larpix/pacmon/pkg"
 )
@@ -47,6 +51,7 @@ var GeometryFileMod3 string
 var UseSingleCube bool
 var PlotNorms Norms
 var DisabledListOptions DLOptions
+var Profile bool
 
 var cmd = cobra.Command{
 	Use:   "pacmon",
@@ -151,6 +156,12 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 }
 
 func run(cmd *cobra.Command, args []string) {
+	if (Profile) {
+		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+		go func() {
+			log.Println(http.ListenAndServe(":6363", nil))
+		}()
+	}
 
 	token := os.Getenv("INFLUXDB_TOKEN")
 	if token == "" {
@@ -254,6 +265,8 @@ func main() {
 	cmd.PersistentFlags().BoolVarP(&UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
 	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.Freq, "disable-list-freq", "d", 60., "Frequency of updating the disable list in seconds")
 	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.RateThreshold, "disable-list-threshold", "t", 5., "Threshold of the data rate for the disable list in Hz")
+	cmd.PersistentFlags().BoolVar(&Profile, "profile", false, "Run fgprof profiler")
+
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)

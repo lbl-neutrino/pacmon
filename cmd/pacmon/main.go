@@ -65,7 +65,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 
 	monitor := NewMonitor()
 	monitor10s := NewMonitor10s()
-	monitorPlots := NewMonitorPlots()
+	// monitorPlots := NewMonitorPlots()
 	disabledListMonitor := NewDisabledListMonitor()
 	syncMonitor := NewSyncMonitor()
 	trigMonitor := NewTrigMonitor()
@@ -81,10 +81,10 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 	now := time.Now()
 	last := time.Now()
 	now10s := time.Now()
-	nowPlots := time.Now()
+	// nowPlots := time.Now()
 	nowDisabledList := time.Now()
 	last10s := time.Now()
-	lastPlots := time.Now()
+	// lastPlots := time.Now()
 	lastDisabledList := time.Now()
 
 	for {
@@ -106,7 +106,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 		for _, word := range msg.Words {
 			monitor.ProcessWord(word, ioGroup)
 			monitor10s.ProcessWord(word, ioGroup)
-			monitorPlots.ProcessWord(word, ioGroup)
+			// monitorPlots.ProcessWord(word, ioGroup)
 			disabledListMonitor.ProcessWord(word, ioGroup)
 
 			syncMonitor.ProcessWord(word, ioGroup)
@@ -123,14 +123,14 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			trigMonitor = NewTrigMonitor()
 		}
 
-		if time.Since(last).Seconds() > 1 {
+		if time.Since(last).Seconds() > 3 {
 			now = time.Now()
 			monitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now.Sub(last).Seconds())
 			monitor = NewMonitor() // Reset monitor
 			last = now
 		}
 
-		if time.Since(last10s).Seconds() > 10 {
+		if time.Since(last10s).Seconds() > 30 {
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now10s.Sub(last10s).Seconds())
@@ -138,12 +138,12 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			last10s = now10s
 		}
 
-		if time.Since(lastPlots).Seconds() > plotNorms.Freq {
-			nowPlots = time.Now()
-			monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
-			monitorPlots = NewMonitorPlots() // Reset monitor
-			lastPlots = nowPlots
-		}
+		// if time.Since(lastPlots).Seconds() > plotNorms.Freq {
+		// 	nowPlots = time.Now()
+		// 	monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
+		// 	monitorPlots = NewMonitorPlots() // Reset monitor
+		// 	lastPlots = nowPlots
+		// }
 
 		if time.Since(lastDisabledList).Seconds() > disabledListOptions.Freq {
 			nowDisabledList = time.Now()

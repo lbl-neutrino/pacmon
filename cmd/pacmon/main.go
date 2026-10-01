@@ -123,14 +123,14 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			trigMonitor = NewTrigMonitor()
 		}
 
-		if time.Since(last).Seconds() > 3 {
+		if time.Since(last).Seconds() > 1 {
 			now = time.Now()
 			monitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now.Sub(last).Seconds())
 			monitor = NewMonitor() // Reset monitor
 			last = now
 		}
 
-		if time.Since(last10s).Seconds() > 30 {
+		if time.Since(last10s).Seconds() > 10 {
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.UpdateTopChips()

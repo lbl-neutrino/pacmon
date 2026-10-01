@@ -119,7 +119,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 		}
 
 		if len(trigMonitor.Time) > 0 {
-			trigMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
+			// trigMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
 			trigMonitor = NewTrigMonitor()
 		}
 

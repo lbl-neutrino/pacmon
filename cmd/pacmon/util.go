@@ -2,8 +2,10 @@ package main
 
 import (
 	// "encoding/binary"
+	"cmp"
 	"math"
 	"sort"
+	"slices"
 
 	. "larpix/pacmon/pkg"
 )
@@ -79,6 +81,27 @@ func sortByADC(inputMap map[ChannelKey]float64, n int) ([]ChannelKey, []float64)
 	for i := 0; i < n && i < len(keys); i++ {
 		topNKeys = append(topNKeys, keys[i])
 		topNValues = append(topNValues, inputMap[keys[i]])
+	}
+
+	return topNKeys, topNValues
+}
+
+func sortByValue[K comparable, V cmp.Ordered](inputMap map[K]V, n int) ([]K, []V) {
+	keys := make([]K, 0, len(inputMap))
+	for key := range inputMap {
+		keys = append(keys, key)
+	}
+
+	// Sort descending by value
+	slices.SortFunc(keys, func(a, b K) int {
+		return cmp.Compare(inputMap[b], inputMap[a])
+	})
+
+	n = min(max(n, 0), len(keys))
+	topNKeys := keys[:n]
+	topNValues := make([]V, n)
+	for i, k := range topNKeys {
+		topNValues[i] = inputMap[k]
 	}
 
 	return topNKeys, topNValues

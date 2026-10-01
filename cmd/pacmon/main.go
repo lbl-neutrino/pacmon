@@ -133,6 +133,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 		if time.Since(last10s).Seconds() > 30 {
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
+			monitor10s.UpdateTopChips()
 			monitor10s.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now10s.Sub(last10s).Seconds())
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = now10s

@@ -319,6 +319,32 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		writeAPI.WritePoint(point)
 	}
 
+	for i, chip := range m10s.TopInvalidParityChips {
+		point = makePoint("top_invalid_parity_chips")
+
+		point.AddTag("io_group", strconv.Itoa(int(chip.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(chip.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(chip.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(chip.ChipID)))
+
+		point.AddField("total", float64(m10s.TopInvalidParityCounts[i])/timeDiff)
+
+		writeAPI.WritePoint(point)
+	}
+
+	for i, chip := range m10s.TopSharedFifoFullChips {
+		point = makePoint("top_shared_fifo_full_chips")
+
+		point.AddTag("io_group", strconv.Itoa(int(chip.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(chip.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(chip.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(chip.ChipID)))
+
+		point.AddField("total", float64(m10s.TopSharedFifoFullCounts[i])/timeDiff)
+
+		writeAPI.WritePoint(point)
+	}
+
 	writeAPI.Flush()
 
 }

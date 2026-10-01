@@ -54,7 +54,7 @@ type FifoFlagCounts struct {
 const (
 	FifoLessHalfFull FifoFlag = 0
 	FifoMoreHalfFull FifoFlag = 1
-	FifoFull         FifoFlag = 2
+	FifoFull         FifoFlag = 3
 )
 
 type Monitor struct {
@@ -98,6 +98,14 @@ type Monitor10s struct {
 
 	TopADCRMSChannels []ChannelKey
 	TopADCRMSValues   []float64
+
+	InvalidParityPerChip map[ChipKey]uint32
+	TopInvalidParityChips []ChipKey
+	TopInvalidParityCounts []uint32
+
+	SharedFifoFullPerChip map[ChipKey]uint32
+	TopSharedFifoFullChips []ChipKey
+	TopSharedFifoFullCounts []uint32
 }
 
 type MonitorPlots struct {
@@ -149,6 +157,8 @@ func NewMonitor10s() *Monitor10s {
 		DataStatusCountsPerChannel:   make(map[ChannelKey]DataStatusCounts),
 		ConfigStatusCountsPerChannel: make(map[ChannelKey]ConfigStatusCounts),
 		OtherStatusCountsPerChannel:  make(map[ChannelKey]uint),
+		InvalidParityPerChip:         make(map[ChipKey]uint32),
+		SharedFifoFullPerChip:        make(map[ChipKey]uint32),
 	}
 }
 func NewMonitorPlots() *MonitorPlots {
@@ -183,6 +193,7 @@ func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 func (m10s *Monitor10s) ProcessWord(word Word, ioGroup uint8) {
 	m10s.RecordStatuses(word, ioGroup)
 	m10s.RecordADC(word, ioGroup)
+	m10s.RecordChipStats(word, ioGroup)
 }
 
 func (mPlots *MonitorPlots) ProcessWord(word Word, ioGroup uint8) {
@@ -209,6 +220,27 @@ func (m *Monitor) RecordType(word Word) {
 		newWordType = PacketTypeMap[packetType]
 	}
 	m.WordTypeCounts[newWordType]++
+}
+
+func (m *Monitor10s) RecordChipStats(word Word, ioGroup uint8) {
+	pacData := word.PacData()
+	packet := pacData.Packet
+
+	var chipKey ChipKey
+	chipKey.IoGroup = ioGroup
+	chipKey.IoChannel = pacData.IoChannel
+	chipKey.ChipID = packet.Chip()
+
+	isInvalid := ! packet.ValidParity()
+	isSharedFifoFull := FifoFlag(packet.SharedFifoFlags()) == FifoFull
+
+	if (isInvalid) {
+		m.InvalidParityPerChip[chipKey]++
+	}
+
+	if (isSharedFifoFull) {
+		m.SharedFifoFullPerChip[chipKey]++
+	}
 }
 
 func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
@@ -474,11 +506,14 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 }
 
 func (m10s *Monitor10s) UpdateTopHotChannels() {
-
 	m10s.TopHotChannels, m10s.TopHotValues = sortByDataRates(m10s.DataStatusCountsPerChannel, 100)
 	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByADC(m10s.ADCMeanPerChannel, 100)
 	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByADC(m10s.ADCRMSPerChannel, 100)
+}
 
+func (m10s *Monitor10s) UpdateTopChips() {
+	m10s.TopInvalidParityChips, m10s.TopInvalidParityCounts = sortByValue(m10s.InvalidParityPerChip, 100)
+	m10s.TopSharedFifoFullChips, m10s.TopSharedFifoFullCounts = sortByValue(m10s.SharedFifoFullPerChip, 100)
 }
 
 func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {

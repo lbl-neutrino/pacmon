@@ -52,7 +52,7 @@ func genWord(lastTime uint32) Word {
 	t_receipt := (p.Timestamp() + uint32(gRandom.Intn(50))) % 10000000
 
 	return PacData{
-		IoChannel: IoChannel(io_channel),
+		IoChannel: io_channel,
 		Timestamp: t_receipt,
 		Packet:    p,
 	}.ToWord()

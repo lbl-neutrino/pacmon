@@ -25,20 +25,20 @@ type FifoFlag uint8
 
 type ChannelKey struct {
 	IoGroup   uint8
-	IoChannel IoChannel
+	IoChannel uint8
 	ChipID    uint8
 	ChannelID uint8
 }
 
 type ChipKey struct {
 	IoGroup   uint8
-	IoChannel IoChannel
+	IoChannel uint8
 	ChipID    uint8
 }
 
 type IoChannelKey struct {
 	IoGroup   uint8
-	IoChannel IoChannel
+	IoChannel uint8
 }
 
 type FifoFlagCounts struct {

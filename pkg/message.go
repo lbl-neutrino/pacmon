@@ -57,13 +57,11 @@ var PacketTypeMap = map[PacketType]WordType {
 	PacketTypeRead: WordTypeRead,
 }
 
-type IoChannel uint8
-
 // The Pac* structs are all 15 bytes
 // (the Content of a Word)
 
 type PacData struct {
-	IoChannel IoChannel
+	IoChannel uint8
 	Timestamp uint32
 	_ [2]byte
 	Packet Packet

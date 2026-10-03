@@ -196,6 +196,93 @@ func NewTrigMonitor() *TrigMonitor {
 	return &TrigMonitor{}
 }
 
+func newIoChannelKey(ioGroup uint8, pacData PacData) IoChannelKey {
+	return IoChannelKey{IoGroup: ioGroup, IoChannel: pacData.IoChannel}
+}
+
+func newChipKey(ioGroup uint8, pacData PacData) ChipKey {
+	return ChipKey{
+		IoGroup:   ioGroup,
+		IoChannel: pacData.IoChannel,
+		ChipID:    pacData.Packet.Chip(),
+	}
+}
+
+func newChannelKey(ioGroup uint8, pacData PacData) ChannelKey {
+	return ChannelKey{
+		IoGroup:   ioGroup,
+		IoChannel: pacData.IoChannel,
+		ChipID:    pacData.Packet.Chip(),
+		ChannelID: pacData.Packet.Channel(),
+	}
+}
+
+// Record increments the counters for a data packet
+func (c *DataStatusCounts) Record(packet Packet) {
+	c.Total++
+
+	if packet.ValidParity() {
+		c.ValidParity++
+	} else {
+		c.InvalidParity++
+	}
+
+	if packet.Downstream() {
+		c.Downstream++
+	} else {
+		c.Upstream++
+	}
+}
+
+// Record increments the counters for a config read/write packet
+func (c *ConfigStatusCounts) Record(packet Packet) {
+	c.Total++
+
+	if !packet.ValidParity() {
+		c.InvalidParity++
+	}
+
+	isRead := packet.Type() == PacketTypeRead
+	switch {
+	case packet.Downstream() && isRead:
+		c.DownstreamRead++
+	case packet.Downstream():
+		c.DownstreamWrite++
+	case isRead:
+		c.UpstreamRead++
+	default:
+		c.UpstreamWrite++
+	}
+}
+
+// recordStatuses classifies the packet as data, config or other and updates
+// the corresponding counts for key. An entry is ensured in every map so that
+// zero rates still get reported.
+func recordStatuses[K comparable](
+	dataCounts map[K]DataStatusCounts,
+	configCounts map[K]ConfigStatusCounts,
+	otherCounts map[K]uint,
+	key K,
+	packet Packet,
+) {
+	dataStatuses := dataCounts[key]
+	configStatuses := configCounts[key]
+	otherStatuses := otherCounts[key]
+
+	switch packet.Type() {
+	case PacketTypeRead, PacketTypeWrite:
+		configStatuses.Record(packet)
+	case PacketTypeData:
+		dataStatuses.Record(packet)
+	default:
+		otherStatuses++
+	}
+
+	dataCounts[key] = dataStatuses
+	configCounts[key] = configStatuses
+	otherCounts[key] = otherStatuses
+}
+
 func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
 	m.RecordType(word)
 	m.RecordStatuses(word, ioGroup)
@@ -237,11 +324,7 @@ func (m *Monitor) RecordType(word Word) {
 func (m *Monitor10s) RecordChipStats(word Word, ioGroup uint8) {
 	pacData := word.PacData()
 	packet := pacData.Packet
-
-	var chipKey ChipKey
-	chipKey.IoGroup = ioGroup
-	chipKey.IoChannel = pacData.IoChannel
-	chipKey.ChipID = packet.Chip()
+	chipKey := newChipKey(ioGroup, pacData)
 
 	isInvalid := !packet.ValidParity()
 	isSharedFifoFull := FifoFlag(packet.SharedFifoFlags()) == FifoFull
@@ -261,100 +344,21 @@ func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
 	}
 
 	pacData := word.PacData()
-	packet := pacData.Packet
 
-	var ioChannelKey IoChannelKey
-	ioChannelKey.IoGroup = ioGroup
-	ioChannelKey.IoChannel = pacData.IoChannel
-
-	var chipKey ChipKey
-	chipKey.IoGroup = ioGroup
-	chipKey.IoChannel = pacData.IoChannel
-	chipKey.ChipID = packet.Chip()
-
-	// Get current values in monitor
-	dataStatuses := m.DataStatusCounts[ioChannelKey]
-	configStatuses := m.ConfigStatusCounts[ioChannelKey]
-	otherStatuses := m.OtherStatusCounts[ioChannelKey]
-
-	dataStatusesPerChip := m.DataStatusCounts[ioChannelKey]
-	configStatusesPerChip := m.ConfigStatusCounts[ioChannelKey]
-	otherStatusesPerChip := m.OtherStatusCounts[ioChannelKey]
-
-	isConfigRead := packet.Type() == PacketTypeRead
-	isConfigWrite := packet.Type() == PacketTypeWrite
-	isConfig := isConfigRead || isConfigWrite
-
-	isData := packet.Type() == PacketTypeData
-
-	if isConfig {
-
-		configStatuses.Total++
-		configStatusesPerChip.Total++
-
-		if !packet.ValidParity() {
-			configStatuses.InvalidParity++
-			configStatusesPerChip.InvalidParity++
-		}
-
-		if packet.Downstream() {
-
-			if isConfigRead {
-				configStatuses.DownstreamRead++
-				configStatusesPerChip.DownstreamRead++
-			} else if isConfigWrite {
-				configStatuses.DownstreamWrite++
-				configStatusesPerChip.DownstreamWrite++
-			}
-
-		} else {
-
-			if isConfigRead {
-				configStatuses.UpstreamRead++
-				configStatusesPerChip.UpstreamRead++
-			} else if isConfigWrite {
-				configStatuses.UpstreamWrite++
-				configStatusesPerChip.UpstreamWrite++
-			}
-
-		}
-
-	} else if isData {
-
-		dataStatuses.Total++
-		dataStatusesPerChip.Total++
-
-		if packet.ValidParity() {
-			dataStatuses.ValidParity++
-			dataStatusesPerChip.ValidParity++
-		} else {
-			dataStatuses.InvalidParity++
-			dataStatusesPerChip.InvalidParity++
-		}
-
-		if packet.Downstream() {
-			dataStatuses.Downstream++
-			dataStatusesPerChip.Downstream++
-		} else {
-			dataStatuses.Upstream++
-			dataStatusesPerChip.Upstream++
-		}
-
-	} else {
-		otherStatuses++
-		otherStatusesPerChip++
-	}
-
-	// Update monitor
-
-	m.DataStatusCounts[ioChannelKey] = dataStatuses
-	m.ConfigStatusCounts[ioChannelKey] = configStatuses
-	m.OtherStatusCounts[ioChannelKey] = otherStatuses
-
-	m.DataStatusCountsPerChip[chipKey] = dataStatusesPerChip
-	m.ConfigStatusCountsPerChip[chipKey] = configStatusesPerChip
-	m.OtherStatusCountsPerChip[chipKey] = otherStatusesPerChip
-
+	recordStatuses(
+		m.DataStatusCounts,
+		m.ConfigStatusCounts,
+		m.OtherStatusCounts,
+		newIoChannelKey(ioGroup, pacData),
+		pacData.Packet,
+	)
+	recordStatuses(
+		m.DataStatusCountsPerChip,
+		m.ConfigStatusCountsPerChip,
+		m.OtherStatusCountsPerChip,
+		newChipKey(ioGroup, pacData),
+		pacData.Packet,
+	)
 }
 
 func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
@@ -368,11 +372,7 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 	}
 
 	packet := pacData.Packet
-	var channel ChannelKey
-	channel.IoGroup = ioGroup
-	channel.IoChannel = pacData.IoChannel
-	channel.ChipID = packet.Chip()
-	channel.ChannelID = packet.Channel()
+	channel := newChannelKey(ioGroup, pacData)
 
 	fifoFlagCounts := m.FifoFlagCounts[channel]
 
@@ -407,76 +407,14 @@ func (m10s *Monitor10s) RecordStatuses(word Word, ioGroup uint8) {
 	}
 
 	pacData := word.PacData()
-	packet := pacData.Packet
 
-	var channel ChannelKey
-	channel.IoGroup = ioGroup
-	channel.IoChannel = pacData.IoChannel
-	channel.ChipID = packet.Chip()
-	channel.ChannelID = packet.Channel()
-
-	// Get current values in monitor
-	dataStatuses := m10s.DataStatusCountsPerChannel[channel]
-	configStatuses := m10s.ConfigStatusCountsPerChannel[channel]
-	otherStatuses := m10s.OtherStatusCountsPerChannel[channel]
-
-	isConfigRead := packet.Type() == PacketTypeRead
-	isConfigWrite := packet.Type() == PacketTypeWrite
-	isConfig := isConfigRead || isConfigWrite
-
-	isData := packet.Type() == PacketTypeData
-
-	if isConfig {
-
-		configStatuses.Total++
-
-		if !packet.ValidParity() {
-			configStatuses.InvalidParity++
-		}
-
-		if packet.Downstream() {
-
-			if isConfigRead {
-				configStatuses.DownstreamRead++
-			} else if isConfigWrite {
-				configStatuses.DownstreamWrite++
-			}
-
-		} else {
-
-			if isConfigRead {
-				configStatuses.UpstreamRead++
-			} else if isConfigWrite {
-				configStatuses.UpstreamWrite++
-			}
-
-		}
-
-	} else if isData {
-
-		dataStatuses.Total++
-
-		if packet.ValidParity() {
-			dataStatuses.ValidParity++
-		} else {
-			dataStatuses.InvalidParity++
-		}
-
-		if packet.Downstream() {
-			dataStatuses.Downstream++
-		} else {
-			dataStatuses.Upstream++
-		}
-
-	} else {
-		otherStatuses++
-	}
-
-	// Update monitor
-	m10s.DataStatusCountsPerChannel[channel] = dataStatuses
-	m10s.ConfigStatusCountsPerChannel[channel] = configStatuses
-	m10s.OtherStatusCountsPerChannel[channel] = otherStatuses
-
+	recordStatuses(
+		m10s.DataStatusCountsPerChannel,
+		m10s.ConfigStatusCountsPerChannel,
+		m10s.OtherStatusCountsPerChannel,
+		newChannelKey(ioGroup, pacData),
+		pacData.Packet,
+	)
 }
 
 func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
@@ -492,17 +430,8 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	}
 
 	packet := pacData.Packet
-
-	var channel ChannelKey
-	channel.IoGroup = ioGroup
-	channel.IoChannel = pacData.IoChannel
-	channel.ChipID = packet.Chip()
-	channel.ChannelID = packet.Channel()
-
-	var chip ChipKey
-	chip.IoGroup = ioGroup
-	chip.IoChannel = pacData.IoChannel
-	chip.ChipID = packet.Chip()
+	channel := newChannelKey(ioGroup, pacData)
+	chip := newChipKey(ioGroup, pacData)
 
 	adc := float64(packet.Data())
 
@@ -572,12 +501,7 @@ func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
 		return
 	}
 	packet := pacData.Packet
-
-	var channel ChannelKey
-	channel.IoGroup = ioGroup
-	channel.IoChannel = pacData.IoChannel
-	channel.ChipID = packet.Chip()
-	channel.ChannelID = packet.Channel()
+	channel := newChannelKey(ioGroup, pacData)
 
 	adc := float64(packet.Data())
 
@@ -599,40 +523,13 @@ func (dlm *DisabledListMonitor) RecordStatuses(word Word, ioGroup uint8) {
 	}
 
 	pacData := word.PacData()
-	packet := pacData.Packet
-
-	var channel ChannelKey
-	channel.IoGroup = ioGroup
-	channel.IoChannel = pacData.IoChannel
-	channel.ChipID = packet.Chip()
-	channel.ChannelID = packet.Channel()
-
-	// Get current values in monitor
-	dataStatuses := dlm.DataStatusCountsPerChannel[channel]
-
-	isData := packet.Type() == PacketTypeData
-
-	if isData {
-
-		dataStatuses.Total++
-
-		if packet.ValidParity() {
-			dataStatuses.ValidParity++
-		} else {
-			dataStatuses.InvalidParity++
-		}
-
-		if packet.Downstream() {
-			dataStatuses.Downstream++
-		} else {
-			dataStatuses.Upstream++
-		}
-
-	} else {
+	if pacData.Packet.Type() != PacketTypeData { // Skip non-data
 		return
 	}
 
-	// Update monitor
+	channel := newChannelKey(ioGroup, pacData)
+	dataStatuses := dlm.DataStatusCountsPerChannel[channel]
+	dataStatuses.Record(pacData.Packet)
 	dlm.DataStatusCountsPerChannel[channel] = dataStatuses
 }
 

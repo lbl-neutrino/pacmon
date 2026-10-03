@@ -99,12 +99,12 @@ type Monitor10s struct {
 	TopADCRMSChannels []ChannelKey
 	TopADCRMSValues   []float64
 
-	InvalidParityPerChip map[ChipKey]uint32
-	TopInvalidParityChips []ChipKey
+	InvalidParityPerChip   map[ChipKey]uint32
+	TopInvalidParityChips  []ChipKey
 	TopInvalidParityCounts []uint32
 
-	SharedFifoFullPerChip map[ChipKey]uint32
-	TopSharedFifoFullChips []ChipKey
+	SharedFifoFullPerChip   map[ChipKey]uint32
+	TopSharedFifoFullChips  []ChipKey
 	TopSharedFifoFullCounts []uint32
 }
 
@@ -231,14 +231,14 @@ func (m *Monitor10s) RecordChipStats(word Word, ioGroup uint8) {
 	chipKey.IoChannel = pacData.IoChannel
 	chipKey.ChipID = packet.Chip()
 
-	isInvalid := ! packet.ValidParity()
+	isInvalid := !packet.ValidParity()
 	isSharedFifoFull := FifoFlag(packet.SharedFifoFlags()) == FifoFull
 
-	if (isInvalid) {
+	if isInvalid {
 		m.InvalidParityPerChip[chipKey]++
 	}
 
-	if (isSharedFifoFull) {
+	if isSharedFifoFull {
 		m.SharedFifoFullPerChip[chipKey]++
 	}
 }

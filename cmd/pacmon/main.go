@@ -16,8 +16,8 @@ import (
 	zmq "github.com/pebbe/zmq4"
 	cobra "github.com/spf13/cobra"
 
-	_ "net/http/pprof"
 	"github.com/felixge/fgprof"
+	_ "net/http/pprof"
 
 	. "larpix/pacmon/pkg"
 )
@@ -157,7 +157,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 }
 
 func run(cmd *cobra.Command, args []string) {
-	if (Profile) {
+	if Profile {
 		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 		go func() {
 			log.Println(http.ListenAndServe(":6363", nil))

@@ -14,10 +14,10 @@ import (
 )
 
 var gOptions struct {
-	Port uint16
-	Seed int64
+	Port      uint16
+	Seed      int64
 	SleepMSec float32
-	MaxWords uint
+	MaxWords  uint
 }
 
 var gCmd = cobra.Command{

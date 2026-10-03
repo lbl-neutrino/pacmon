@@ -15,8 +15,8 @@ import (
 	// "gonum.org/v1/gonum/mat"
 	"log"
 	"math"
-	"time"
 	"os"
+	"time"
 )
 
 func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms Norms, timeDiff float64) {
@@ -233,7 +233,7 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 	_, err = f.WriteString(s)
 	if err != nil {
 		fmt.Println(err)
-	        f.Close()
+		f.Close()
 	}
 	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/RealTime/iog_%d_rms.png", ioGroup)); err != nil {
 		log.Panic(err)

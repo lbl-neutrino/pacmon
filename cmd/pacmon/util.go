@@ -4,8 +4,8 @@ import (
 	// "encoding/binary"
 	"cmp"
 	"math"
-	"sort"
 	"slices"
+	"sort"
 
 	. "larpix/pacmon/pkg"
 )

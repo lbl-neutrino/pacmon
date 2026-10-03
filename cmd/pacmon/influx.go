@@ -240,11 +240,7 @@ func (m10s *Monitor10s) writeOtherStatusesRatesPerChannel(writeAPI api.WriteAPI,
 func (m10s *Monitor10s) writeTopDataRateChannels(writeAPI api.WriteAPI, timeNow time.Time, timeDiff float64) {
 	for i, channel := range m10s.TopHotChannels {
 		point := makePoint("top_data_rate_channels", timeNow)
-		// NOTE: Unlike the other measurements, this one has no tile_id tag
-		addTag(point, "io_group", channel.IoGroup)
-		addTag(point, "io_channel", channel.IoChannel)
-		addTag(point, "chip", channel.ChipID)
-		addTag(point, "channel", channel.ChannelID)
+		addChannelTags(point, channel)
 		point.AddField("rate", float64(m10s.TopHotValues[i])/timeDiff)
 		writeAPI.WritePoint(point)
 	}

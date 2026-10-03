@@ -38,20 +38,24 @@ type DLOptions struct {
 	Freq          float64
 }
 
-var PacmanURL []string
-var PacmanIog []string
-var PacmanIoJson string
-var InfluxURL string
-var InfluxOrg string
-var InfluxBucket string
-var GeometryFileMod0 string
-var GeometryFileMod1 string
-var GeometryFileMod2 string
-var GeometryFileMod3 string
-var UseSingleCube bool
-var PlotNorms Norms
-var DisabledListOptions DLOptions
-var Profile bool
+type Flags struct {
+	PacmanURL           []string
+	PacmanIog           []string
+	PacmanIoJson        string
+	InfluxURL           string
+	InfluxOrg           string
+	InfluxBucket        string
+	GeometryFileMod0    string
+	GeometryFileMod1    string
+	GeometryFileMod2    string
+	GeometryFileMod3    string
+	UseSingleCube       bool
+	PlotNorms           Norms
+	DisabledListOptions DLOptions
+	Profile             bool
+}
+
+var flags Flags
 
 var cmd = cobra.Command{
 	Use:   "pacmon",
@@ -77,7 +81,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 	socket.SetSubscribe("")
 	socket.Connect(singlePacmanURL)
 
-	writeAPI := client.WriteAPI(InfluxOrg, InfluxBucket)
+	writeAPI := client.WriteAPI(flags.InfluxOrg, flags.InfluxBucket)
 	now := time.Now()
 	last := time.Now()
 	now10s := time.Now()
@@ -157,7 +161,7 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 }
 
 func run(cmd *cobra.Command, args []string) {
-	if Profile {
+	if flags.Profile {
 		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 		go func() {
 			log.Println(http.ListenAndServe(":6363", nil))
@@ -171,13 +175,13 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	client := influxdb2.NewClientWithOptions(InfluxURL, token, influxdb2.DefaultOptions().SetPrecision(time.Millisecond))
+	client := influxdb2.NewClientWithOptions(flags.InfluxURL, token, influxdb2.DefaultOptions().SetPrecision(time.Millisecond))
 
 	var wg sync.WaitGroup
 
-	content, err := os.ReadFile(PacmanIoJson)
+	content, err := os.ReadFile(flags.PacmanIoJson)
 	if err == nil {
-		fmt.Println("Reading IO config from JSON file: ", PacmanIoJson)
+		fmt.Println("Reading IO config from JSON file: ", flags.PacmanIoJson)
 		var config IoConfig
 
 		err = json.Unmarshal([]byte(content), &config)
@@ -186,8 +190,8 @@ func run(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		PacmanURL = nil
-		PacmanIog = nil
+		flags.PacmanURL = nil
+		flags.PacmanIog = nil
 
 		fmt.Println("Found the following PACMANs vs. IO groups: ")
 		for _, iog := range config.IoGroupPacmanURL {
@@ -195,9 +199,9 @@ func run(cmd *cobra.Command, args []string) {
 			if !strings.Contains(url, ":") {
 				url = url + ":5556"
 			}
-			PacmanURL = append(PacmanURL, fmt.Sprintf("tcp://%s", url))
-			PacmanIog = append(PacmanIog, strconv.Itoa(int(iog[0].(float64))))
-			fmt.Println("\tURL: ", PacmanURL[len(PacmanURL)-1], " - io_group = ", PacmanIog[len(PacmanIog)-1])
+			flags.PacmanURL = append(flags.PacmanURL, fmt.Sprintf("tcp://%s", url))
+			flags.PacmanIog = append(flags.PacmanIog, strconv.Itoa(int(iog[0].(float64))))
+			fmt.Println("\tURL: ", flags.PacmanURL[len(flags.PacmanURL)-1], " - io_group = ", flags.PacmanIog[len(flags.PacmanIog)-1])
 		}
 
 	} else {
@@ -205,31 +209,31 @@ func run(cmd *cobra.Command, args []string) {
 		fmt.Println("Using --pacman-url and --pacman-iog options")
 	}
 
-	geometryMod0 := LoadGeometry(GeometryFileMod0)
-	geometryMod1 := LoadGeometry(GeometryFileMod1)
-	geometryMod2 := LoadGeometry(GeometryFileMod2)
-	geometryMod3 := LoadGeometry(GeometryFileMod3)
+	geometryMod0 := LoadGeometry(flags.GeometryFileMod0)
+	geometryMod1 := LoadGeometry(flags.GeometryFileMod1)
+	geometryMod2 := LoadGeometry(flags.GeometryFileMod2)
+	geometryMod3 := LoadGeometry(flags.GeometryFileMod3)
 
-	if UseSingleCube {
+	if flags.UseSingleCube {
 		geometryMod0 = LoadGeometry("layout/geometry_singlecube.json")
 	}
 
-	wg.Add(len(PacmanURL))
+	wg.Add(len(flags.PacmanURL))
 
-	for iPacman := 0; iPacman < len(PacmanURL); iPacman++ {
+	for iPacman := 0; iPacman < len(flags.PacmanURL); iPacman++ {
 
-		ioGroup, err := strconv.ParseUint(PacmanIog[iPacman], 10, 8)
+		ioGroup, err := strconv.ParseUint(flags.PacmanIog[iPacman], 10, 8)
 		if err != nil {
 			panic(err)
 		}
 		if ioGroup == 1 || ioGroup == 2 { // Module 0
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod0, PlotNorms, DisabledListOptions, client, &wg)
+			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod0, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
 		} else if ioGroup == 3 || ioGroup == 4 { // Module 1
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod1, PlotNorms, DisabledListOptions, client, &wg)
+			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod1, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
 		} else if ioGroup == 5 || ioGroup == 6 { // Module 2
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod2, PlotNorms, DisabledListOptions, client, &wg)
+			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod2, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
 		} else if ioGroup == 7 || ioGroup == 8 { // Module 3
-			go runSingle(PacmanURL[iPacman], uint8(ioGroup), geometryMod3, PlotNorms, DisabledListOptions, client, &wg)
+			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod3, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
 		} else { // Shouldn't get here
 			fmt.Println("io_group not between 1 and 8.")
 		}
@@ -239,34 +243,34 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func main() {
-	cmd.PersistentFlags().StringSliceVar(&PacmanURL, "pacman-url", nil,
+	cmd.PersistentFlags().StringSliceVar(&flags.PacmanURL, "pacman-url", nil,
 		"Comma-separated list of PACMAN data server URLs")
-	cmd.PersistentFlags().StringSliceVar(&PacmanIog, "pacman-iog", nil,
+	cmd.PersistentFlags().StringSliceVar(&flags.PacmanIog, "pacman-iog", nil,
 		"Comma-separated list of corresponding IO groups")
-	cmd.PersistentFlags().StringVar(&InfluxURL, "influx-url", "http://localhost:18086",
+	cmd.PersistentFlags().StringVar(&flags.InfluxURL, "influx-url", "http://localhost:18086",
 		"InfluxDB URL")
-	cmd.PersistentFlags().StringVar(&InfluxOrg, "influx-org", "lbl-neutrino",
+	cmd.PersistentFlags().StringVar(&flags.InfluxOrg, "influx-org", "lbl-neutrino",
 		"InfluxDB organization")
-	cmd.PersistentFlags().StringVar(&InfluxBucket, "influx-bucket", "pacmon-test",
+	cmd.PersistentFlags().StringVar(&flags.InfluxBucket, "influx-bucket", "pacmon-test",
 		"InfluxDB bucket")
-	cmd.PersistentFlags().StringVar(&PacmanIoJson, "pacman-config", "",
+	cmd.PersistentFlags().StringVar(&flags.PacmanIoJson, "pacman-config", "",
 		"JSON configuration file of the IO instead of --pacman-url and --pacman-iog")
-	cmd.PersistentFlags().StringVar(&GeometryFileMod0, "geometry-mod0", "layout/geometry_mod0_v4.json",
+	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod0, "geometry-mod0", "layout/geometry_mod0_v4.json",
 		"JSON file with the layout of Module 0 (io_group = 1,2)")
-	cmd.PersistentFlags().StringVar(&GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2_v4.json",
+	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2_v4.json",
 		"JSON file with the layout of Module 2 (io_group = 5,6)")
-	cmd.PersistentFlags().StringVar(&GeometryFileMod1, "geometry-mod1", "layout/geometry_mod1_v4.json",
+	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod1, "geometry-mod1", "layout/geometry_mod1_v4.json",
 		"JSON file with the layout of Module 1 (io_group = 3,4)")
-	cmd.PersistentFlags().StringVar(&GeometryFileMod3, "geometry-mod3", "layout/geometry_mod3_v4.json",
+	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod3, "geometry-mod3", "layout/geometry_mod3_v4.json",
 		"JSON file with the layout of Module 3 (io_group =  7,8)")
-	cmd.PersistentFlags().Float64VarP(&PlotNorms.Freq, "plot-freq", "f", 30., "Frequency of updating plots in seconds")
-	cmd.PersistentFlags().Float64VarP(&PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
-	cmd.PersistentFlags().Float64VarP(&PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
-	cmd.PersistentFlags().Float64VarP(&PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
-	cmd.PersistentFlags().BoolVarP(&UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
-	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.Freq, "disable-list-freq", "d", 60., "Frequency of updating the disable list in seconds")
-	cmd.PersistentFlags().Float64VarP(&DisabledListOptions.RateThreshold, "disable-list-threshold", "t", 5., "Threshold of the data rate for the disable list in Hz")
-	cmd.PersistentFlags().BoolVar(&Profile, "profile", false, "Run fgprof profiler")
+	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.Freq, "plot-freq", "f", 30., "Frequency of updating plots in seconds")
+	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
+	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
+	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
+	cmd.PersistentFlags().BoolVarP(&flags.UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
+	cmd.PersistentFlags().Float64VarP(&flags.DisabledListOptions.Freq, "disable-list-freq", "d", 60., "Frequency of updating the disable list in seconds")
+	cmd.PersistentFlags().Float64VarP(&flags.DisabledListOptions.RateThreshold, "disable-list-threshold", "t", 5., "Threshold of the data rate for the disable list in Hz")
+	cmd.PersistentFlags().BoolVar(&flags.Profile, "profile", false, "Run fgprof profiler")
 
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)

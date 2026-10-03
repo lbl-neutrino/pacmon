@@ -17,21 +17,15 @@ func IoChannelToTileId(ioChannel int) int {
 
 func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDiff float64) {
 
-	// fmt.Println("\t", time.Now(), " : start writing to influx")
-
 	makePoint := func(name string) *write.Point {
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
-
-	// fmt.Println("\t", time.Now(), " : write word_types_rates")
 
 	point := makePoint("word_types_rates")
 	for wordtype, count := range m.WordTypeCounts {
 		point.AddField(wordtype.String(), float64(count)/timeDiff)
 	}
 	writeAPI.WritePoint(point)
-
-	// fmt.Println("\t", time.Now(), " : write data_statuses_rates")
 
 	for ioChannel, counts := range m.DataStatusCounts {
 		point = makePoint("data_statuses_rates")
@@ -47,8 +41,6 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
 		writeAPI.WritePoint(point)
 	}
-
-	// fmt.Println("\t", time.Now(), " : write config_statuses_rates")
 
 	for ioChannel, counts := range m.ConfigStatusCounts {
 		point = makePoint("config_statuses_rates")
@@ -77,8 +69,6 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	// fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_chip")
-
 	for chip, counts := range m.DataStatusCountsPerChip {
 		point = makePoint("data_statuses_rates_per_chip")
 
@@ -94,8 +84,6 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
 		writeAPI.WritePoint(point)
 	}
-
-	// fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_chip")
 
 	for chip, counts := range m.ConfigStatusCountsPerChip {
 		point = makePoint("config_statuses_rates_per_chip")
@@ -126,50 +114,46 @@ func (m *Monitor) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, timeDi
 		writeAPI.WritePoint(point)
 	}
 
-	// fmt.Println("\t", time.Now(), " : write local_fifo_statuses")
+	for channel, counts := range m.FifoFlagCounts {
+		total := float64(counts.LocalFifoLessHalfFull + counts.LocalFifoMoreHalfFull + counts.LocalFifoFull)
+		if total == 0 {
+			continue
+		}
 
-	// for channel, counts := range m.FifoFlagCounts {
-	// 	total := float64(counts.LocalFifoLessHalfFull + counts.LocalFifoMoreHalfFull + counts.LocalFifoFull)
-	// 	if total == 0 {
-	// 		continue
-	// 	}
+		point = makePoint("local_fifo_statuses")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 
-	// 	point = makePoint("local_fifo_statuses")
-	// 	point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
-	// 	point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
-	// 	point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-	// 	point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
-	// 	point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+		point.AddField("less_half_full", float64(counts.LocalFifoLessHalfFull)/total)
+		point.AddField("more_half_full", float64(counts.LocalFifoMoreHalfFull)/total)
+		point.AddField("full", float64(counts.LocalFifoFull)/total)
 
-	// 	point.AddField("less_half_full", float64(counts.LocalFifoLessHalfFull)/total)
-	// 	point.AddField("more_half_full", float64(counts.LocalFifoMoreHalfFull)/total)
-	// 	point.AddField("full", float64(counts.LocalFifoFull)/total)
+		writeAPI.WritePoint(point)
+	}
 
-	// 	writeAPI.WritePoint(point)
-	// }
+	for channel, counts := range m.FifoFlagCounts {
+		total := float64(counts.SharedFifoLessHalfFull + counts.SharedFifoMoreHalfFull + counts.SharedFifoFull)
+		if total == 0 {
+			continue
+		}
 
-	// fmt.Println("\t", time.Now(), " : write shared_fifo_statuses")
+		point = makePoint("shared_fifo_statuses")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
 
-	// for channel, counts := range m.FifoFlagCounts {
-	// 	total := float64(counts.SharedFifoLessHalfFull + counts.SharedFifoMoreHalfFull + counts.SharedFifoFull)
-	// 	if total == 0 {
-	// 		continue
-	// 	}
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
 
-	// 	point = makePoint("shared_fifo_statuses")
-	// 	point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
-	// 	point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
-	// 	point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddField("less_half_full", float64(counts.SharedFifoLessHalfFull)/total)
+		point.AddField("more_half_full", float64(counts.SharedFifoMoreHalfFull)/total)
+		point.AddField("full", float64(counts.SharedFifoFull)/total)
 
-	// 	point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
-
-	// 	point.AddField("less_half_full", float64(counts.SharedFifoLessHalfFull)/total)
-	// 	point.AddField("more_half_full", float64(counts.SharedFifoMoreHalfFull)/total)
-	// 	point.AddField("full", float64(counts.SharedFifoFull)/total)
-
-	// 	writeAPI.WritePoint(point)
-	// }
+		writeAPI.WritePoint(point)
+	}
 
 	writeAPI.Flush()
 
@@ -181,33 +165,27 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		return influxdb2.NewPoint(name, nil, nil, timeNow)
 	}
 
-	// fmt.Println("\t", time.Now(), " : write packet_adc_total")
-
 	point := makePoint("packet_adc_total")
 	point.AddField("adc_mean", m10s.ADCMeanTotal)
 	point.AddField("adc_rms", m10s.ADCRMSTotal)
 	point.AddField("n_packets", m10s.NPacketsTotal)
 	writeAPI.WritePoint(point)
 
-	// fmt.Println("\t", time.Now(), " : write packet_adc_per_channel")
+	for channel, adc := range m10s.ADCMeanPerChannel {
+		point = makePoint("packet_adc_per_channel")
 
-	// for channel, adc := range m10s.ADCMeanPerChannel {
-	// 	point = makePoint("packet_adc_per_channel")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-	// 	point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
-	// 	point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
-	// 	point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
-	// 	point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
-	// 	point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+		point.AddField("adc_mean", adc)
+		point.AddField("adc_rms", m10s.ADCRMSPerChannel[channel])
+		point.AddField("n_packets", m10s.NPacketsPerChannel[channel])
 
-	// 	point.AddField("adc_mean", adc)
-	// 	point.AddField("adc_rms", m10s.ADCRMSPerChannel[channel])
-	// 	point.AddField("n_packets", m10s.NPacketsPerChannel[channel])
-
-	// 	writeAPI.WritePoint(point)
-	// }
-
-	// fmt.Println("\t", time.Now(), " : write packet_adc_per_chip")
+		writeAPI.WritePoint(point)
+	}
 
 	for chip, adc := range m10s.ADCMeanPerChip {
 		point = makePoint("packet_adc_per_chip")
@@ -224,60 +202,56 @@ func (m10s *Monitor10s) WriteToInflux(writeAPI api.WriteAPI, timeNow time.Time, 
 		writeAPI.WritePoint(point)
 	}
 
-	// fmt.Println("\t", time.Now(), " : write data_statuses_rates_per_channel")
+	for channel, counts := range m10s.DataStatusCountsPerChannel {
+		point = makePoint("data_statuses_rates_per_channel")
 
-	// for channel, counts := range m10s.DataStatusCountsPerChannel {
-	// 	point = makePoint("data_statuses_rates_per_channel")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-	// 	point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
-	// 	point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
-	// 	point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
-	// 	point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
-	// 	point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+		point.AddField("total", float64(counts.Total)/timeDiff)
+		point.AddField("valid_parity", float64(counts.ValidParity)/timeDiff)
+		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
+		point.AddField("downstream", float64(counts.Downstream)/timeDiff)
+		point.AddField("upstream", float64(counts.Upstream)/timeDiff)
 
-	// 	point.AddField("total", float64(counts.Total)/timeDiff)
-	// 	point.AddField("valid_parity", float64(counts.ValidParity)/timeDiff)
-	// 	point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
-	// 	point.AddField("downstream", float64(counts.Downstream)/timeDiff)
-	// 	point.AddField("upstream", float64(counts.Upstream)/timeDiff)
+		writeAPI.WritePoint(point)
+	}
 
-	// 	writeAPI.WritePoint(point)
-	// }
+	for channel, counts := range m10s.ConfigStatusCountsPerChannel {
+		point = makePoint("config_statuses_rates_per_channel")
 
-	// fmt.Println("\t", time.Now(), " : write config_statuses_rates_per_channel")
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-	// for channel, counts := range m10s.ConfigStatusCountsPerChannel {
-	// 	point = makePoint("config_statuses_rates_per_channel")
+		point.AddField("total", float64(counts.Total)/timeDiff)
+		point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
+		point.AddField("downstream_read", float64(counts.DownstreamRead)/timeDiff)
+		point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
+		point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
+		point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
 
-	// 	point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
-	// 	point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
-	// 	point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
-	// 	point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
-	// 	point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
+		writeAPI.WritePoint(point)
+	}
 
-	// 	point.AddField("total", float64(counts.Total)/timeDiff)
-	// 	point.AddField("invalid_parity", float64(counts.InvalidParity)/timeDiff)
-	// 	point.AddField("downstream_read", float64(counts.DownstreamRead)/timeDiff)
-	// 	point.AddField("downstream_write", float64(counts.DownstreamWrite)/timeDiff)
-	// 	point.AddField("upstream_read", float64(counts.UpstreamRead)/timeDiff)
-	// 	point.AddField("upstream_write", float64(counts.UpstreamWrite)/timeDiff)
+	for channel, counts := range m10s.OtherStatusCountsPerChannel {
+		point = makePoint("other_statuses_rates_per_channel")
 
-	// 	writeAPI.WritePoint(point)
-	// }
+		point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
+		point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
+		point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
+		point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
+		point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
 
-	// for channel, counts := range m10s.OtherStatusCountsPerChannel {
-	// 	point = makePoint("other_statuses_rates_per_channel")
+		point.AddField("total", float64(counts)/timeDiff)
 
-	// 	point.AddTag("io_group", strconv.Itoa(int(channel.IoGroup)))
-	// 	point.AddTag("io_channel", strconv.Itoa(int(channel.IoChannel)))
-	// 	point.AddTag("tile_id", strconv.Itoa(IoChannelToTileId(int(channel.IoChannel))))
-	// 	point.AddTag("chip", strconv.Itoa(int(channel.ChipID)))
-	// 	point.AddTag("channel", strconv.Itoa(int(channel.ChannelID)))
-
-	// 	point.AddField("total", float64(counts)/timeDiff)
-
-	// 	writeAPI.WritePoint(point)
-	// }
+		writeAPI.WritePoint(point)
+	}
 
 	for i, channel := range m10s.TopHotChannels {
 		point = makePoint("top_data_rate_channels")

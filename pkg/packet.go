@@ -134,7 +134,9 @@ func (p Packet) ValidParity() bool {
 	onesCount := 0
 	for i, b := range p {
 		if i == 7 {
-			onesCount = onesCount + bits.OnesCount(uint(b&0x7F)) // Skip parity bit
+			onesCount = onesCount + bits.OnesCount(
+				uint(b&0x7F),
+			) // Skip parity bit
 		} else {
 			onesCount = onesCount + bits.OnesCount(uint(b))
 		}

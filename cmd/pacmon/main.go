@@ -63,7 +63,15 @@ var cmd = cobra.Command{
 	Run:   run,
 }
 
-func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNorms Norms, disabledListOptions DLOptions, client influxdb2.Client, wg *sync.WaitGroup) {
+func runSingle(
+	singlePacmanURL string,
+	ioGroup uint8,
+	geometry Geometry,
+	plotNorms Norms,
+	disabledListOptions DLOptions,
+	client influxdb2.Client,
+	wg *sync.WaitGroup,
+) {
 
 	defer wg.Done()
 
@@ -118,18 +126,26 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 		}
 
 		if len(syncMonitor.Time) > 0 {
-			syncMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
+			syncMonitor.WriteToInflux(
+				writeAPI,
+				time.Unix(msgTime, 0),
+			)
 			syncMonitor = NewSyncMonitor()
 		}
 
 		if len(trigMonitor.Time) > 0 {
-			// trigMonitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0))
+			// trigMonitor.WriteToInflux(writeAPI,
+			// 	time.Unix(msgTime, 0))
 			trigMonitor = NewTrigMonitor()
 		}
 
 		if time.Since(last).Seconds() > 1 {
 			now = time.Now()
-			monitor.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now.Sub(last).Seconds())
+			monitor.WriteToInflux(
+				writeAPI,
+				time.Unix(msgTime, 0),
+				now.Sub(last).Seconds(),
+			)
 			monitor = NewMonitor() // Reset monitor
 			last = now
 		}
@@ -138,22 +154,34 @@ func runSingle(singlePacmanURL string, ioGroup uint8, geometry Geometry, plotNor
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.UpdateTopChips()
-			monitor10s.WriteToInflux(writeAPI, time.Unix(msgTime, 0), now10s.Sub(last10s).Seconds())
+			monitor10s.WriteToInflux(
+				writeAPI,
+				time.Unix(msgTime, 0),
+				now10s.Sub(last10s).Seconds(),
+			)
 			monitor10s = NewMonitor10s() // Reset monitor
 			last10s = now10s
 		}
 
 		// if time.Since(lastPlots).Seconds() > plotNorms.Freq {
 		// 	nowPlots = time.Now()
-		// 	monitorPlots.PlotMetrics(geometry, ioGroup, plotNorms, nowPlots.Sub(lastPlots).Seconds())
+		// 	monitorPlots.PlotMetrics(geometry, ioGroup,
+		// 		plotNorms, nowPlots.Sub(lastPlots).Seconds())
 		// 	monitorPlots = NewMonitorPlots() // Reset monitor
 		// 	lastPlots = nowPlots
 		// }
 
-		if time.Since(lastDisabledList).Seconds() > disabledListOptions.Freq {
+		if time.Since(lastDisabledList).
+			Seconds() >
+			disabledListOptions.Freq {
 			nowDisabledList = time.Now()
-			disabledListMonitor.WriteDisabledList(disabledListOptions.RateThreshold, time.Since(lastDisabledList).Seconds(), ioGroup)
-			disabledListMonitor = NewDisabledListMonitor() // Reset monitor
+			disabledListMonitor.WriteDisabledList(
+				disabledListOptions.RateThreshold,
+				time.Since(lastDisabledList).Seconds(),
+				ioGroup,
+			)
+			// Reset monitor
+			disabledListMonitor = NewDisabledListMonitor()
 			lastDisabledList = nowDisabledList
 		}
 
@@ -175,13 +203,20 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	client := influxdb2.NewClientWithOptions(flags.InfluxURL, token, influxdb2.DefaultOptions().SetPrecision(time.Millisecond))
+	client := influxdb2.NewClientWithOptions(
+		flags.InfluxURL,
+		token,
+		influxdb2.DefaultOptions().SetPrecision(time.Millisecond),
+	)
 
 	var wg sync.WaitGroup
 
 	content, err := os.ReadFile(flags.PacmanIoJson)
 	if err == nil {
-		fmt.Println("Reading IO config from JSON file: ", flags.PacmanIoJson)
+		fmt.Println(
+			"Reading IO config from JSON file: ",
+			flags.PacmanIoJson,
+		)
 		var config IoConfig
 
 		err = json.Unmarshal([]byte(content), &config)
@@ -199,9 +234,20 @@ func run(cmd *cobra.Command, args []string) {
 			if !strings.Contains(url, ":") {
 				url = url + ":5556"
 			}
-			flags.PacmanURL = append(flags.PacmanURL, fmt.Sprintf("tcp://%s", url))
-			flags.PacmanIog = append(flags.PacmanIog, strconv.Itoa(int(iog[0].(float64))))
-			fmt.Println("\tURL: ", flags.PacmanURL[len(flags.PacmanURL)-1], " - io_group = ", flags.PacmanIog[len(flags.PacmanIog)-1])
+			flags.PacmanURL = append(
+				flags.PacmanURL,
+				fmt.Sprintf("tcp://%s", url),
+			)
+			flags.PacmanIog = append(
+				flags.PacmanIog,
+				strconv.Itoa(int(iog[0].(float64))),
+			)
+			fmt.Println(
+				"\tURL: ",
+				flags.PacmanURL[len(flags.PacmanURL)-1],
+				" - io_group = ",
+				flags.PacmanIog[len(flags.PacmanIog)-1],
+			)
 		}
 
 	} else {
@@ -222,18 +268,54 @@ func run(cmd *cobra.Command, args []string) {
 
 	for iPacman := 0; iPacman < len(flags.PacmanURL); iPacman++ {
 
-		ioGroup, err := strconv.ParseUint(flags.PacmanIog[iPacman], 10, 8)
+		ioGroup, err := strconv.ParseUint(
+			flags.PacmanIog[iPacman],
+			10,
+			8,
+		)
 		if err != nil {
 			panic(err)
 		}
 		if ioGroup == 1 || ioGroup == 2 { // Module 0
-			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod0, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
+			go runSingle(
+				flags.PacmanURL[iPacman],
+				uint8(ioGroup),
+				geometryMod0,
+				flags.PlotNorms,
+				flags.DisabledListOptions,
+				client,
+				&wg,
+			)
 		} else if ioGroup == 3 || ioGroup == 4 { // Module 1
-			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod1, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
+			go runSingle(
+				flags.PacmanURL[iPacman],
+				uint8(ioGroup),
+				geometryMod1,
+				flags.PlotNorms,
+				flags.DisabledListOptions,
+				client,
+				&wg,
+			)
 		} else if ioGroup == 5 || ioGroup == 6 { // Module 2
-			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod2, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
+			go runSingle(
+				flags.PacmanURL[iPacman],
+				uint8(ioGroup),
+				geometryMod2,
+				flags.PlotNorms,
+				flags.DisabledListOptions,
+				client,
+				&wg,
+			)
 		} else if ioGroup == 7 || ioGroup == 8 { // Module 3
-			go runSingle(flags.PacmanURL[iPacman], uint8(ioGroup), geometryMod3, flags.PlotNorms, flags.DisabledListOptions, client, &wg)
+			go runSingle(
+				flags.PacmanURL[iPacman],
+				uint8(ioGroup),
+				geometryMod3,
+				flags.PlotNorms,
+				flags.DisabledListOptions,
+				client,
+				&wg,
+			)
 		} else { // Shouldn't get here
 			fmt.Println("io_group not between 1 and 8.")
 		}
@@ -243,34 +325,71 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func main() {
-	cmd.PersistentFlags().StringSliceVar(&flags.PacmanURL, "pacman-url", nil,
-		"Comma-separated list of PACMAN data server URLs")
-	cmd.PersistentFlags().StringSliceVar(&flags.PacmanIog, "pacman-iog", nil,
-		"Comma-separated list of corresponding IO groups")
-	cmd.PersistentFlags().StringVar(&flags.InfluxURL, "influx-url", "http://localhost:18086",
-		"InfluxDB URL")
-	cmd.PersistentFlags().StringVar(&flags.InfluxOrg, "influx-org", "lbl-neutrino",
-		"InfluxDB organization")
-	cmd.PersistentFlags().StringVar(&flags.InfluxBucket, "influx-bucket", "pacmon-test",
-		"InfluxDB bucket")
-	cmd.PersistentFlags().StringVar(&flags.PacmanIoJson, "pacman-config", "",
-		"JSON configuration file of the IO instead of --pacman-url and --pacman-iog")
-	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod0, "geometry-mod0", "layout/geometry_mod0_v4.json",
-		"JSON file with the layout of Module 0 (io_group = 1,2)")
-	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod2, "geometry-mod2", "layout/geometry_mod2_v4.json",
-		"JSON file with the layout of Module 2 (io_group = 5,6)")
-	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod1, "geometry-mod1", "layout/geometry_mod1_v4.json",
-		"JSON file with the layout of Module 1 (io_group = 3,4)")
-	cmd.PersistentFlags().StringVar(&flags.GeometryFileMod3, "geometry-mod3", "layout/geometry_mod3_v4.json",
-		"JSON file with the layout of Module 3 (io_group =  7,8)")
-	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.Freq, "plot-freq", "f", 30., "Frequency of updating plots in seconds")
-	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.Mean, "norm-mean", "m", 50., "Norm for the ADC mean plots")
-	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.RMS, "norm-rms", "s", 5., "Norm for the ADC RMS plots")
-	cmd.PersistentFlags().Float64VarP(&flags.PlotNorms.Rate, "norm-rate", "r", 10., "Norm for the rate plots")
-	cmd.PersistentFlags().BoolVarP(&flags.UseSingleCube, "single-cube", "c", false, "Use single-cube geometry")
-	cmd.PersistentFlags().Float64VarP(&flags.DisabledListOptions.Freq, "disable-list-freq", "d", 60., "Frequency of updating the disable list in seconds")
-	cmd.PersistentFlags().Float64VarP(&flags.DisabledListOptions.RateThreshold, "disable-list-threshold", "t", 5., "Threshold of the data rate for the disable list in Hz")
-	cmd.PersistentFlags().BoolVar(&flags.Profile, "profile", false, "Run fgprof profiler")
+	cmd.PersistentFlags().
+		StringSliceVar(&flags.PacmanURL, "pacman-url", nil,
+			"Comma-separated list of PACMAN data server URLs")
+	cmd.PersistentFlags().
+		StringSliceVar(&flags.PacmanIog, "pacman-iog", nil,
+			"Comma-separated list of corresponding IO groups")
+	cmd.PersistentFlags().
+		StringVar(&flags.InfluxURL, "influx-url",
+			"http://localhost:18086",
+			"InfluxDB URL")
+	cmd.PersistentFlags().
+		StringVar(&flags.InfluxOrg, "influx-org", "lbl-neutrino",
+			"InfluxDB organization")
+	cmd.PersistentFlags().
+		StringVar(&flags.InfluxBucket, "influx-bucket", "pacmon-test",
+			"InfluxDB bucket")
+	cmd.PersistentFlags().
+		StringVar(&flags.PacmanIoJson, "pacman-config", "",
+			"JSON configuration file of the IO instead of "+
+				"--pacman-url and --pacman-iog")
+	cmd.PersistentFlags().
+		StringVar(&flags.GeometryFileMod0, "geometry-mod0",
+			"layout/geometry_mod0_v4.json",
+			"JSON file with the layout of "+
+				"Module 0 (io_group = 1,2)")
+	cmd.PersistentFlags().
+		StringVar(&flags.GeometryFileMod2, "geometry-mod2",
+			"layout/geometry_mod2_v4.json",
+			"JSON file with the layout of "+
+				"Module 2 (io_group = 5,6)")
+	cmd.PersistentFlags().
+		StringVar(&flags.GeometryFileMod1, "geometry-mod1",
+			"layout/geometry_mod1_v4.json",
+			"JSON file with the layout of "+
+				"Module 1 (io_group = 3,4)")
+	cmd.PersistentFlags().
+		StringVar(&flags.GeometryFileMod3, "geometry-mod3",
+			"layout/geometry_mod3_v4.json",
+			"JSON file with the layout of "+
+				"Module 3 (io_group =  7,8)")
+	cmd.PersistentFlags().
+		Float64VarP(&flags.PlotNorms.Freq, "plot-freq", "f", 30.,
+			"Frequency of updating plots in seconds")
+	cmd.PersistentFlags().
+		Float64VarP(&flags.PlotNorms.Mean, "norm-mean", "m", 50.,
+			"Norm for the ADC mean plots")
+	cmd.PersistentFlags().
+		Float64VarP(&flags.PlotNorms.RMS, "norm-rms", "s", 5.,
+			"Norm for the ADC RMS plots")
+	cmd.PersistentFlags().
+		Float64VarP(&flags.PlotNorms.Rate, "norm-rate", "r", 10.,
+			"Norm for the rate plots")
+	cmd.PersistentFlags().
+		BoolVarP(&flags.UseSingleCube, "single-cube", "c", false,
+			"Use single-cube geometry")
+	cmd.PersistentFlags().
+		Float64VarP(&flags.DisabledListOptions.Freq,
+			"disable-list-freq", "d", 60.,
+			"Frequency of updating the disable list in seconds")
+	cmd.PersistentFlags().
+		Float64VarP(&flags.DisabledListOptions.RateThreshold,
+			"disable-list-threshold", "t", 5.,
+			"Threshold of the data rate for the disable list in Hz")
+	cmd.PersistentFlags().
+		BoolVar(&flags.Profile, "profile", false, "Run fgprof profiler")
 
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)

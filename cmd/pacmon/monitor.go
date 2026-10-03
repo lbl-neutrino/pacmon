@@ -135,10 +135,14 @@ type TrigMonitor struct {
 
 func NewMonitor() *Monitor {
 	return &Monitor{
-		WordTypeCounts:            make(map[WordType]uint),
-		DataStatusCounts:          make(map[IoChannelKey]DataStatusCounts),
-		DataStatusCountsPerChip:   make(map[ChipKey]DataStatusCounts),
-		ConfigStatusCounts:        make(map[IoChannelKey]ConfigStatusCounts),
+		WordTypeCounts: make(map[WordType]uint),
+		DataStatusCounts: make(
+			map[IoChannelKey]DataStatusCounts,
+		),
+		DataStatusCountsPerChip: make(map[ChipKey]DataStatusCounts),
+		ConfigStatusCounts: make(
+			map[IoChannelKey]ConfigStatusCounts,
+		),
 		ConfigStatusCountsPerChip: make(map[ChipKey]ConfigStatusCounts),
 		OtherStatusCounts:         make(map[IoChannelKey]uint),
 		OtherStatusCountsPerChip:  make(map[ChipKey]uint),
@@ -148,31 +152,39 @@ func NewMonitor() *Monitor {
 
 func NewMonitor10s() *Monitor10s {
 	return &Monitor10s{
-		ADCMeanPerChip:               make(map[ChipKey]float64),
-		ADCRMSPerChip:                make(map[ChipKey]float64),
-		NPacketsPerChip:              make(map[ChipKey]uint32),
-		ADCMeanPerChannel:            make(map[ChannelKey]float64),
-		ADCRMSPerChannel:             make(map[ChannelKey]float64),
-		NPacketsPerChannel:           make(map[ChannelKey]uint32),
-		DataStatusCountsPerChannel:   make(map[ChannelKey]DataStatusCounts),
-		ConfigStatusCountsPerChannel: make(map[ChannelKey]ConfigStatusCounts),
-		OtherStatusCountsPerChannel:  make(map[ChannelKey]uint),
-		InvalidParityPerChip:         make(map[ChipKey]uint32),
-		SharedFifoFullPerChip:        make(map[ChipKey]uint32),
+		ADCMeanPerChip:     make(map[ChipKey]float64),
+		ADCRMSPerChip:      make(map[ChipKey]float64),
+		NPacketsPerChip:    make(map[ChipKey]uint32),
+		ADCMeanPerChannel:  make(map[ChannelKey]float64),
+		ADCRMSPerChannel:   make(map[ChannelKey]float64),
+		NPacketsPerChannel: make(map[ChannelKey]uint32),
+		DataStatusCountsPerChannel: make(
+			map[ChannelKey]DataStatusCounts,
+		),
+		ConfigStatusCountsPerChannel: make(
+			map[ChannelKey]ConfigStatusCounts,
+		),
+		OtherStatusCountsPerChannel: make(map[ChannelKey]uint),
+		InvalidParityPerChip:        make(map[ChipKey]uint32),
+		SharedFifoFullPerChip:       make(map[ChipKey]uint32),
 	}
 }
 func NewMonitorPlots() *MonitorPlots {
 	return &MonitorPlots{
-		ADCMeanPerChannel:          make(map[ChannelKey]float64),
-		ADCRMSPerChannel:           make(map[ChannelKey]float64),
-		NPacketsPerChannel:         make(map[ChannelKey]uint32),
-		DataStatusCountsPerChannel: make(map[ChannelKey]DataStatusCounts),
+		ADCMeanPerChannel:  make(map[ChannelKey]float64),
+		ADCRMSPerChannel:   make(map[ChannelKey]float64),
+		NPacketsPerChannel: make(map[ChannelKey]uint32),
+		DataStatusCountsPerChannel: make(
+			map[ChannelKey]DataStatusCounts,
+		),
 	}
 }
 
 func NewDisabledListMonitor() *DisabledListMonitor {
 	return &DisabledListMonitor{
-		DataStatusCountsPerChannel: make(map[ChannelKey]DataStatusCounts),
+		DataStatusCountsPerChannel: make(
+			map[ChannelKey]DataStatusCounts,
+		),
 	}
 }
 
@@ -494,26 +506,58 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 
 	adc := float64(packet.Data())
 
-	m10s.ADCMeanTotal, m10s.ADCRMSTotal = UpdateMeanRMS(m10s.ADCMeanTotal, m10s.ADCRMSTotal, m10s.NPacketsTotal, adc)
+	m10s.ADCMeanTotal, m10s.ADCRMSTotal = UpdateMeanRMS(
+		m10s.ADCMeanTotal,
+		m10s.ADCRMSTotal,
+		m10s.NPacketsTotal,
+		adc,
+	)
 	m10s.NPacketsTotal++
 
-	m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip] = UpdateMeanRMS(m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip], m10s.NPacketsPerChip[chip], adc)
+	m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip] = UpdateMeanRMS(
+		m10s.ADCMeanPerChip[chip],
+		m10s.ADCRMSPerChip[chip],
+		m10s.NPacketsPerChip[chip],
+		adc,
+	)
 	m10s.NPacketsPerChip[chip]++
 
-	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] = UpdateMeanRMS(m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel], m10s.NPacketsPerChannel[channel], adc)
+	mean, rms := UpdateMeanRMS(
+		m10s.ADCMeanPerChannel[channel],
+		m10s.ADCRMSPerChannel[channel],
+		m10s.NPacketsPerChannel[channel],
+		adc,
+	)
+	m10s.ADCMeanPerChannel[channel] = mean
+	m10s.ADCRMSPerChannel[channel] = rms
 	m10s.NPacketsPerChannel[channel]++
 
 }
 
 func (m10s *Monitor10s) UpdateTopHotChannels() {
-	m10s.TopHotChannels, m10s.TopHotValues = sortByDataRates(m10s.DataStatusCountsPerChannel, 100)
-	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByADC(m10s.ADCMeanPerChannel, 100)
-	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByADC(m10s.ADCRMSPerChannel, 100)
+	m10s.TopHotChannels, m10s.TopHotValues = sortByDataRates(
+		m10s.DataStatusCountsPerChannel,
+		100,
+	)
+	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByADC(
+		m10s.ADCMeanPerChannel,
+		100,
+	)
+	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByADC(
+		m10s.ADCRMSPerChannel,
+		100,
+	)
 }
 
 func (m10s *Monitor10s) UpdateTopChips() {
-	m10s.TopInvalidParityChips, m10s.TopInvalidParityCounts = sortByValue(m10s.InvalidParityPerChip, 100)
-	m10s.TopSharedFifoFullChips, m10s.TopSharedFifoFullCounts = sortByValue(m10s.SharedFifoFullPerChip, 100)
+	m10s.TopInvalidParityChips, m10s.TopInvalidParityCounts = sortByValue(
+		m10s.InvalidParityPerChip,
+		100,
+	)
+	m10s.TopSharedFifoFullChips, m10s.TopSharedFifoFullCounts = sortByValue(
+		m10s.SharedFifoFullPerChip,
+		100,
+	)
 }
 
 func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
@@ -537,7 +581,14 @@ func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
 
 	adc := float64(packet.Data())
 
-	mPlots.ADCMeanPerChannel[channel], mPlots.ADCRMSPerChannel[channel] = UpdateMeanRMS(mPlots.ADCMeanPerChannel[channel], mPlots.ADCRMSPerChannel[channel], mPlots.NPacketsPerChannel[channel], adc)
+	mean, rms := UpdateMeanRMS(
+		mPlots.ADCMeanPerChannel[channel],
+		mPlots.ADCRMSPerChannel[channel],
+		mPlots.NPacketsPerChannel[channel],
+		adc,
+	)
+	mPlots.ADCMeanPerChannel[channel] = mean
+	mPlots.ADCRMSPerChannel[channel] = rms
 	mPlots.NPacketsPerChannel[channel]++
 
 }

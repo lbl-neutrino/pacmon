@@ -7,7 +7,11 @@ import (
 	"time"
 )
 
-func channelsAboveThreshold(inputMap map[ChannelKey]DataStatusCounts, duration float64, threshold float64) []ChannelKey {
+func channelsAboveThreshold(
+	inputMap map[ChannelKey]DataStatusCounts,
+	duration float64,
+	threshold float64,
+) []ChannelKey {
 	var channelsAbove []ChannelKey
 	for channel, value := range inputMap {
 		if float64(value.Total)/duration > threshold {
@@ -17,21 +21,46 @@ func channelsAboveThreshold(inputMap map[ChannelKey]DataStatusCounts, duration f
 	return channelsAbove
 }
 
-func (dlm *DisabledListMonitor) WriteDisabledList(threshold float64, duration float64, ioGroup uint8) {
+func (dlm *DisabledListMonitor) WriteDisabledList(
+	threshold float64,
+	duration float64,
+	ioGroup uint8,
+) {
 
-	hotChannels := channelsAboveThreshold(dlm.DataStatusCountsPerChannel, duration, threshold)
+	hotChannels := channelsAboveThreshold(
+		dlm.DataStatusCountsPerChannel,
+		duration,
+		threshold,
+	)
 
 	// Create a map to hold the values
 	data := make(map[string][]int)
 	for _, channel := range hotChannels {
-		key := fmt.Sprintf("%d-%d-%d", channel.IoGroup, IoChannelToTileId(int(channel.IoChannel)), channel.ChipID)
+		key := fmt.Sprintf(
+			"%d-%d-%d",
+			channel.IoGroup,
+			IoChannelToTileId(int(channel.IoChannel)),
+			channel.ChipID,
+		)
 		data[key] = append(data[key], int(channel.ChannelID))
 	}
 
 	// Create a JSON file
 	now := time.Now()
 
-	file, err := os.Create(fmt.Sprintf("/data/disabledlist/iog_%d-%d_%02d_%02d_%02d_%02d_%02d.json", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second()))
+	file, err := os.Create(
+		fmt.Sprintf(
+			"/data/disabledlist/iog_%d-"+
+				"%d_%02d_%02d_%02d_%02d_%02d.json",
+			ioGroup,
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute(),
+			now.Second(),
+		),
+	)
 	if err != nil {
 		fmt.Println("Error creating JSON file:", err)
 		return

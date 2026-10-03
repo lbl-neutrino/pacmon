@@ -19,7 +19,12 @@ import (
 	"time"
 )
 
-func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms Norms, timeDiff float64) {
+func (mPlots *MonitorPlots) PlotMetrics(
+	geometry Geometry,
+	ioGroup uint8,
+	norms Norms,
+	timeDiff float64,
+) {
 
 	length := len(mPlots.ADCMeanPerChannel)
 	if length == 0 {
@@ -55,7 +60,8 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 		// convert from ChannelKey to ChannelTile
 		var channelTile ChannelTile
 		channelTile.IoGroup = 2 - (channelKey.IoGroup % 2)
-		channelTile.TileID = (uint8(channelKey.IoChannel)-1)/4 + 1 + 8*(1-(channelKey.IoGroup%2))
+		channelTile.TileID = (uint8(channelKey.IoChannel)-1)/4 + 1 +
+			8*(1-(channelKey.IoGroup%2))
 		channelTile.ChipID = channelKey.ChipID
 		channelTile.ChannelID = channelKey.ChannelID
 
@@ -85,7 +91,9 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 		// Rate
 		xyzsRate[i].X = xy.X
 		xyzsRate[i].Y = xy.Y
-		xyzsRate[i].Z = (float64(mPlots.NPacketsPerChannel[channelKey]) / timeDiff) / normRate
+		nPackets := float64(mPlots.NPacketsPerChannel[channelKey])
+		rate := nPackets / timeDiff
+		xyzsRate[i].Z = rate / normRate
 		if xyzsRate[i].Z > 1 {
 			xyzsRate[i].Z = 1.
 		}
@@ -164,8 +172,10 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 			panic(err)
 		}
 		return draw.GlyphStyle{Color: c,
-			Radius: font.Length(geometry.Pitch * vg.Millimeter.Points() / 2.),
-			Shape:  draw.BoxGlyph{},
+			Radius: font.Length(
+				geometry.Pitch * vg.Millimeter.Points() / 2.,
+			),
+			Shape: draw.BoxGlyph{},
 		}
 	}
 	scRMS.GlyphStyleFunc = func(i int) draw.GlyphStyle {
@@ -178,8 +188,10 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 			panic(err)
 		}
 		return draw.GlyphStyle{Color: c,
-			Radius: font.Length(geometry.Pitch * vg.Millimeter.Points() / 2.),
-			Shape:  draw.BoxGlyph{},
+			Radius: font.Length(
+				geometry.Pitch * vg.Millimeter.Points() / 2.,
+			),
+			Shape: draw.BoxGlyph{},
 		}
 	}
 	scRate.GlyphStyleFunc = func(i int) draw.GlyphStyle {
@@ -192,8 +204,10 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 			panic(err)
 		}
 		return draw.GlyphStyle{Color: c,
-			Radius: font.Length(geometry.Pitch * vg.Millimeter.Points() / 2.),
-			Shape:  draw.BoxGlyph{},
+			Radius: font.Length(
+				geometry.Pitch * vg.Millimeter.Points() / 2.,
+			),
+			Shape: draw.BoxGlyph{},
 		}
 	}
 
@@ -202,31 +216,122 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 	pRate.Add(scRate)
 
 	now := time.Now()
-	pMean.Title.Text = fmt.Sprintf("ADC Mean - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
-	pRMS.Title.Text = fmt.Sprintf("ADC RMS - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
-	pRate.Title.Text = fmt.Sprintf("Rate - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
+	pMean.Title.Text = fmt.Sprintf(
+		"ADC Mean - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d",
+		ioGroup,
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+	)
+	pRMS.Title.Text = fmt.Sprintf(
+		"ADC RMS - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d",
+		ioGroup,
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+	)
+	pRate.Title.Text = fmt.Sprintf(
+		"Rate - io_group = %d\n%d-%02d-%02d %02d:%02d:%02d",
+		ioGroup,
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+	)
 
 	pMean.Title.TextStyle.Font.Size = 120
 	pRMS.Title.TextStyle.Font.Size = 120
 	pRate.Title.TextStyle.Font.Size = 120
 
 	fmt.Println(now, ": saving plot for io_group = ", ioGroup)
+	width := font.Length((maxX-minX)*vg.Millimeter.Points() + 30.)
+	height := font.Length((maxY-minY)*vg.Millimeter.Points() + 150.)
 	// Save for history
-	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/mean/iog_%d_mean_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pMean.Save(
+		width,
+		height,
+		fmt.Sprintf(
+			"/data/plots/mean/iog_%d_mean_"+
+				"%d_%02d_%02d_%02d_%02d_%02d.png",
+			ioGroup,
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute(),
+			now.Second(),
+		),
+	); err != nil {
 		log.Panic(err)
 	}
-	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/rms/iog_%d_rms_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pRMS.Save(
+		width,
+		height,
+		fmt.Sprintf(
+			"/data/plots/rms/iog_%d_rms_"+
+				"%d_%02d_%02d_%02d_%02d_%02d.png",
+			ioGroup,
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute(),
+			now.Second(),
+		),
+	); err != nil {
 		log.Panic(err)
 	}
-	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/rate/iog_%d_rate_%d_%02d_%02d_%02d_%02d_%02d.png", ioGroup, now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())); err != nil {
+	if err := pRate.Save(
+		width,
+		height,
+		fmt.Sprintf(
+			"/data/plots/rate/iog_%d_rate_"+
+				"%d_%02d_%02d_%02d_%02d_%02d.png",
+			ioGroup,
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute(),
+			now.Second(),
+		),
+	); err != nil {
 		log.Panic(err)
 	}
 	// Save for instant updates
-	if err := pMean.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/RealTime/iog_%d_mean.png", ioGroup)); err != nil {
+	if err := pMean.Save(
+		width,
+		height,
+		fmt.Sprintf(
+			"/data/plots/RealTime/iog_%d_mean.png",
+			ioGroup,
+		),
+	); err != nil {
 		log.Panic(err)
 	}
-	s := fmt.Sprintf("%d-%02d-%02d\n%02d:%02d:%02d", now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
-	f, err := os.Create(fmt.Sprintf("/data/plots/RealTime/iog_%d_last_update.txt", ioGroup))
+	s := fmt.Sprintf(
+		"%d-%02d-%02d\n%02d:%02d:%02d",
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+	)
+	f, err := os.Create(
+		fmt.Sprintf(
+			"/data/plots/RealTime/iog_%d_last_update.txt",
+			ioGroup,
+		),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -235,10 +340,24 @@ func (mPlots *MonitorPlots) PlotMetrics(geometry Geometry, ioGroup uint8, norms 
 		fmt.Println(err)
 		f.Close()
 	}
-	if err := pRMS.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/RealTime/iog_%d_rms.png", ioGroup)); err != nil {
+	if err := pRMS.Save(
+		width,
+		height,
+		fmt.Sprintf(
+			"/data/plots/RealTime/iog_%d_rms.png",
+			ioGroup,
+		),
+	); err != nil {
 		log.Panic(err)
 	}
-	if err := pRate.Save(font.Length((maxX-minX)*vg.Millimeter.Points()+30.), font.Length((maxY-minY)*vg.Millimeter.Points()+150.), fmt.Sprintf("/data/plots/RealTime/iog_%d_rate.png", ioGroup)); err != nil {
+	if err := pRate.Save(
+		width,
+		height,
+		fmt.Sprintf(
+			"/data/plots/RealTime/iog_%d_rate.png",
+			ioGroup,
+		),
+	); err != nil {
 		log.Panic(err)
 	}
 

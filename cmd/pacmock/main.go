@@ -111,11 +111,13 @@ func main() {
 	gCmd.PersistentFlags().Int64VarP(&gOptions.Seed, "seed", "s", 0,
 		"random seed")
 
-	gCmd.PersistentFlags().Float32VarP(&gOptions.SleepMSec, "sleep-msec", "z", 100,
-		"milliseconds between messages")
+	gCmd.PersistentFlags().
+		Float32VarP(&gOptions.SleepMSec, "sleep-msec", "z", 100,
+			"milliseconds between messages")
 
-	gCmd.PersistentFlags().UintVarP(&gOptions.MaxWords, "max-words", "m", 100,
-		"seconds between messages")
+	gCmd.PersistentFlags().
+		UintVarP(&gOptions.MaxWords, "max-words", "m", 100,
+			"seconds between messages")
 
 	if err := gCmd.Execute(); err != nil {
 		log.Fatal(err)

@@ -12,8 +12,24 @@ import (
 
 func Parity64(data Packet) byte {
 	// x := binary.LittleEndian.Uint64(data)
-	x := uint64(data[0])<<56 | uint64(data[1])<<48 | uint64(data[2])<<40 | uint64(data[3])<<32 |
-		uint64(data[4])<<24 | uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7])
+	x := uint64(
+		data[0],
+	)<<56 | uint64(
+		data[1],
+	)<<48 | uint64(
+		data[2],
+	)<<40 | uint64(
+		data[3],
+	)<<32 |
+		uint64(
+			data[4],
+		)<<24 | uint64(
+		data[5],
+	)<<16 | uint64(
+		data[6],
+	)<<8 | uint64(
+		data[7],
+	)
 	x ^= x >> 32
 	x ^= x >> 16
 	x ^= x >> 8
@@ -22,21 +38,32 @@ func Parity64(data Packet) byte {
 	return byte(x) & 1
 }
 
-func UpdateMeanRMS(oldMean float64, oldRMS float64, oldNPackets uint32, newValue float64) (float64, float64) {
-	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
+func UpdateMeanRMS(
+	oldMean float64,
+	oldRMS float64,
+	oldNPackets uint32,
+	newValue float64,
+) (float64, float64) {
+	// Welford's online algorithm, see
+	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	if oldNPackets == 0 {
 		return newValue, 0.
 	}
 
-	newMean := oldMean + (newValue-oldMean)/(float64(oldNPackets)+1.)
+	n := float64(oldNPackets) + 1.
+	newMean := oldMean + (newValue-oldMean)/n
 	oldVariance := math.Pow(oldRMS, 2)
-	newVariance := oldVariance + ((newValue-oldMean)*(newValue-newMean)-oldVariance)/(float64(oldNPackets)+1.)
+	newVariance := oldVariance +
+		((newValue-oldMean)*(newValue-newMean)-oldVariance)/n
 	return newMean, math.Sqrt(newVariance)
 }
 
 // For sorting maps with arbitrary key types
 
-func sortByDataRates(inputMap map[ChannelKey]DataStatusCounts, n int) ([]ChannelKey, []uint) {
+func sortByDataRates(
+	inputMap map[ChannelKey]DataStatusCounts,
+	n int,
+) ([]ChannelKey, []uint) {
 	// Create a slice to hold the keys
 	keys := make([]ChannelKey, 0, len(inputMap))
 
@@ -61,7 +88,10 @@ func sortByDataRates(inputMap map[ChannelKey]DataStatusCounts, n int) ([]Channel
 	return topNKeys, topNValues
 }
 
-func sortByADC(inputMap map[ChannelKey]float64, n int) ([]ChannelKey, []float64) {
+func sortByADC(
+	inputMap map[ChannelKey]float64,
+	n int,
+) ([]ChannelKey, []float64) {
 	// Create a slice to hold the keys
 	keys := make([]ChannelKey, 0, len(inputMap))
 
@@ -86,7 +116,10 @@ func sortByADC(inputMap map[ChannelKey]float64, n int) ([]ChannelKey, []float64)
 	return topNKeys, topNValues
 }
 
-func sortByValue[K comparable, V cmp.Ordered](inputMap map[K]V, n int) ([]K, []V) {
+func sortByValue[K comparable, V cmp.Ordered](
+	inputMap map[K]V,
+	n int,
+) ([]K, []V) {
 	keys := make([]K, 0, len(inputMap))
 	for key := range inputMap {
 		keys = append(keys, key)

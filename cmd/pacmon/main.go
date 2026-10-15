@@ -16,8 +16,9 @@ import (
 	zmq "github.com/pebbe/zmq4"
 	cobra "github.com/spf13/cobra"
 
-	"github.com/felixge/fgprof"
 	_ "net/http/pprof"
+
+	"github.com/felixge/fgprof"
 
 	. "larpix/pacmon/pkg"
 )
@@ -94,10 +95,10 @@ func runSingle(
 	last := time.Now()
 	now10s := time.Now()
 	// nowPlots := time.Now()
-	nowDisabledList := time.Now()
+	// nowDisabledList := time.Now()
 	last10s := time.Now()
 	// lastPlots := time.Now()
-	lastDisabledList := time.Now()
+	// lastDisabledList := time.Now()
 
 	for {
 
@@ -171,19 +172,19 @@ func runSingle(
 		// 	lastPlots = nowPlots
 		// }
 
-		if time.Since(lastDisabledList).
-			Seconds() >
-			disabledListOptions.Freq {
-			nowDisabledList = time.Now()
-			disabledListMonitor.WriteDisabledList(
-				disabledListOptions.RateThreshold,
-				time.Since(lastDisabledList).Seconds(),
-				ioGroup,
-			)
-			// Reset monitor
-			disabledListMonitor = NewDisabledListMonitor()
-			lastDisabledList = nowDisabledList
-		}
+		// if time.Since(lastDisabledList).
+		// 	Seconds() >
+		// 	disabledListOptions.Freq {
+		// 	nowDisabledList = time.Now()
+		// 	disabledListMonitor.WriteDisabledList(
+		// 		disabledListOptions.RateThreshold,
+		// 		time.Since(lastDisabledList).Seconds(),
+		// 		ioGroup,
+		// 	)
+		// 	// Reset monitor
+		// 	disabledListMonitor = NewDisabledListMonitor()
+		// 	lastDisabledList = nowDisabledList
+		// }
 
 	}
 }

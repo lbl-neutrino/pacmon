@@ -269,9 +269,9 @@ func (m10s *Monitor10s) WriteToInflux(
 	// point.AddField("n_packets", m10s.NPacketsTotal)
 	// writeAPI.WritePoint(point)
 
-	m10s.writePacketAdcPerChannel(writeAPI, timeNow)
+	// m10s.writePacketAdcPerChannel(writeAPI, timeNow)
 	m10s.writePacketAdcPerChip(writeAPI, timeNow)
-	m10s.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	// m10s.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	// m10s.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	// m10s.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	m10s.writeTopDataRateChannels(writeAPI, timeNow, timeDiff)

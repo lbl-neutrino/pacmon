@@ -54,7 +54,8 @@ type FifoFlagCounts struct {
 const (
 	FifoLessHalfFull FifoFlag = 0
 	FifoMoreHalfFull FifoFlag = 1
-	FifoFull         FifoFlag = 3
+	FifoFull1        FifoFlag = 2
+	FifoFull2        FifoFlag = 3
 )
 
 type Monitor struct {
@@ -327,7 +328,8 @@ func (m *Monitor10s) RecordChipStats(word Word, ioGroup uint8) {
 	chipKey := newChipKey(ioGroup, pacData)
 
 	isInvalid := !packet.ValidParity()
-	isSharedFifoFull := FifoFlag(packet.SharedFifoFlags()) == FifoFull
+	flag := FifoFlag(packet.SharedFifoFlags())
+	isSharedFifoFull := flag == FifoFull1 || flag == FifoFull2
 
 	if isInvalid {
 		m.InvalidParityPerChip[chipKey]++
@@ -382,7 +384,7 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 		fifoFlagCounts.LocalFifoLessHalfFull++
 	case FifoMoreHalfFull:
 		fifoFlagCounts.LocalFifoMoreHalfFull++
-	case FifoFull:
+	case FifoFull1, FifoFull2:
 		fifoFlagCounts.LocalFifoFull++
 	}
 
@@ -392,7 +394,7 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 		fifoFlagCounts.SharedFifoLessHalfFull++
 	case FifoMoreHalfFull:
 		fifoFlagCounts.SharedFifoMoreHalfFull++
-	case FifoFull:
+	case FifoFull1, FifoFull2:
 		fifoFlagCounts.SharedFifoFull++
 	}
 

@@ -140,7 +140,7 @@ func runSingle(
 			trigMonitor = NewTrigMonitor()
 		}
 
-		if time.Since(last).Seconds() > 1 {
+		if time.Since(last).Seconds() > 60 {
 			now = time.Now()
 			monitor.WriteToInflux(
 				writeAPI,
@@ -151,7 +151,7 @@ func runSingle(
 			last = now
 		}
 
-		if time.Since(last10s).Seconds() > 10 {
+		if time.Since(last10s).Seconds() > 300 {
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.UpdateTopChips()

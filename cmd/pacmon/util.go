@@ -63,6 +63,7 @@ func UpdateMeanRMS(
 func sortByDataRates(
 	inputMap map[ChannelKey]DataStatusCounts,
 	n int,
+	ascending bool,
 ) ([]ChannelKey, []uint) {
 	// Create a slice to hold the keys
 	keys := make([]ChannelKey, 0, len(inputMap))
@@ -74,6 +75,9 @@ func sortByDataRates(
 
 	// Sort the keys based on the corresponding values
 	sort.Slice(keys, func(i, j int) bool {
+		if ascending {
+			return inputMap[keys[i]].Total < inputMap[keys[j]].Total
+		}
 		return inputMap[keys[i]].Total > inputMap[keys[j]].Total
 	})
 

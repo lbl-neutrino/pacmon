@@ -275,6 +275,7 @@ func (m10s *Monitor10s) WriteToInflux(
 	// m10s.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	// m10s.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	m10s.writeTopDataRateChannels(writeAPI, timeNow, timeDiff)
+	m10s.writeBottomDataRateChannels(writeAPI, timeNow, timeDiff)
 	m10s.writeTopAdcMeanChannels(writeAPI, timeNow)
 	m10s.writeTopAdcRmsChannels(writeAPI, timeNow)
 	m10s.writeTopInvalidParityChips(writeAPI, timeNow, timeDiff)
@@ -360,6 +361,19 @@ func (m10s *Monitor10s) writeTopDataRateChannels(
 		point := makePoint("top_data_rate_channels", timeNow)
 		addChannelTags(point, channel)
 		point.AddField("rate", float64(m10s.TopHotValues[i])/timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m10s *Monitor10s) writeBottomDataRateChannels(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for i, channel := range m10s.BottomColdChannels {
+		point := makePoint("bottom_data_rate_channels", timeNow)
+		addChannelTags(point, channel)
+		point.AddField("rate", float64(m10s.BottomColdValues[i])/timeDiff)
 		writeAPI.WritePoint(point)
 	}
 }

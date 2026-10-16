@@ -99,18 +99,18 @@ func (m *Monitor) WriteToInflux(
 	timeDiff float64,
 ) {
 
-	point := makePoint("word_types_rates", timeNow)
-	for wordtype, count := range m.WordTypeCounts {
-		point.AddField(wordtype.String(), float64(count)/timeDiff)
-	}
-	writeAPI.WritePoint(point)
+	// point := makePoint("word_types_rates", timeNow)
+	// for wordtype, count := range m.WordTypeCounts {
+	// 	point.AddField(wordtype.String(), float64(count)/timeDiff)
+	// }
+	// writeAPI.WritePoint(point)
 
 	m.writeDataStatusesRates(writeAPI, timeNow, timeDiff)
 	m.writeConfigStatusesRates(writeAPI, timeNow, timeDiff)
-	m.writeOtherStatusesRates(writeAPI, timeNow, timeDiff)
+	// m.writeOtherStatusesRates(writeAPI, timeNow, timeDiff)
 	m.writeDataStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
 	m.writeConfigStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
-	m.writeOtherStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
+	// m.writeOtherStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
 	// m.writeLocalFifoStatuses(writeAPI, timeNow)
 	// m.writeSharedFifoStatuses(writeAPI, timeNow)
 
@@ -263,11 +263,11 @@ func (m10s *Monitor10s) WriteToInflux(
 	timeDiff float64,
 ) {
 
-	point := makePoint("packet_adc_total", timeNow)
-	point.AddField("adc_mean", m10s.ADCMeanTotal)
-	point.AddField("adc_rms", m10s.ADCRMSTotal)
-	point.AddField("n_packets", m10s.NPacketsTotal)
-	writeAPI.WritePoint(point)
+	// point := makePoint("packet_adc_total", timeNow)
+	// point.AddField("adc_mean", m10s.ADCMeanTotal)
+	// point.AddField("adc_rms", m10s.ADCRMSTotal)
+	// point.AddField("n_packets", m10s.NPacketsTotal)
+	// writeAPI.WritePoint(point)
 
 	// m10s.writePacketAdcPerChannel(writeAPI, timeNow)
 	m10s.writePacketAdcPerChip(writeAPI, timeNow)
@@ -307,7 +307,7 @@ func (m10s *Monitor10s) writePacketAdcPerChip(
 		addChipTags(point, chip)
 		point.AddField("adc_mean", adc)
 		point.AddField("adc_rms", m10s.ADCRMSPerChip[chip])
-		point.AddField("n_packets", m10s.NPacketsPerChip[chip])
+		// point.AddField("n_packets", m10s.NPacketsPerChip[chip])
 		writeAPI.WritePoint(point)
 	}
 }

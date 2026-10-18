@@ -1,3 +1,4 @@
 /pacmon
 /pacmock
 *.png
+/.static-build

@@ -1,9 +1,9 @@
 package pkg
 
 import (
-	"bytes"
 	"encoding/binary"
 	"io"
+	"slices"
 	"strconv"
 )
 
@@ -114,81 +114,114 @@ type Word struct { // [16]byte
 	Content [15]byte
 }
 
-func castWord[T any](w *Word) T {
-	var ret T
-	r := bytes.NewReader(w.Content[:])
-	binary.Read(r, binary.LittleEndian, &ret)
-	return ret
-}
-
-func packWord[T any](wordtype WordType, t T) Word {
-	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.LittleEndian, &t)
-	var word Word
-	word.Type = wordtype
-	copy(word.Content[:], buf.Bytes())
-	return word
-	// return Word{
-	// 	Type: wordtype,
-	// 	Content: buf.Bytes(),
-	// }
-}
+// The decoders and encoders below are written out by hand rather than using
+// binary.Read/binary.Write, which go through reflection and allocate on every
+// call. Padding bytes are ignored when decoding and zeroed when encoding.
 
 func (w *Word) PacData() PacData {
-	return castWord[PacData](w)
+	c := &w.Content
+	var d PacData
+	d.IoChannel = c[0]
+	d.Timestamp = binary.LittleEndian.Uint32(c[1:5])
+	copy(d.Packet[:], c[7:15])
+	return d
 }
 
 func (t PacData) ToWord() Word {
-	return packWord[PacData](WordTypeData, t)
+	w := Word{Type: WordTypeData}
+	c := &w.Content
+	c[0] = t.IoChannel
+	binary.LittleEndian.PutUint32(c[1:5], t.Timestamp)
+	copy(c[7:15], t.Packet[:])
+	return w
 }
 
 func (w *Word) PacTrig() PacTrig {
-	return castWord[PacTrig](w)
+	c := &w.Content
+	var d PacTrig
+	d.Type = c[0]
+	d.Timestamp = binary.LittleEndian.Uint32(c[3:7])
+	return d
 }
 
 func (t PacTrig) ToWord() Word {
-	return packWord[PacTrig](WordTypeTrig, t)
+	w := Word{Type: WordTypeTrig}
+	c := &w.Content
+	c[0] = t.Type
+	binary.LittleEndian.PutUint32(c[3:7], t.Timestamp)
+	return w
 }
 
 func (w *Word) PacSync() PacSync {
-	return castWord[PacSync](w)
+	c := &w.Content
+	var d PacSync
+	d.Type = SyncType(c[0])
+	d.Timestamp = binary.LittleEndian.Uint32(c[3:7])
+	return d
 }
 
 func (t PacSync) ToWord() Word {
-	return packWord[PacSync](WordTypeSync, t)
+	w := Word{Type: WordTypeSync}
+	c := &w.Content
+	c[0] = byte(t.Type)
+	binary.LittleEndian.PutUint32(c[3:7], t.Timestamp)
+	return w
 }
 
 func (w *Word) PacPing() PacPing {
-	return castWord[PacPing](w)
+	return PacPing{}
 }
 
 func (t PacPing) ToWord() Word {
-	return packWord[PacPing](WordTypePing, t)
+	return Word{Type: WordTypePing}
 }
 
 func (w *Word) PacWrite() PacWrite {
-	return castWord[PacWrite](w)
+	c := &w.Content
+	var d PacWrite
+	d.Write1 = binary.LittleEndian.Uint32(c[3:7])
+	d.Write2 = binary.LittleEndian.Uint32(c[11:15])
+	return d
 }
 
 func (t PacWrite) ToWord() Word {
-	return packWord[PacWrite](WordTypeWrite, t)
+	w := Word{Type: WordTypeWrite}
+	c := &w.Content
+	binary.LittleEndian.PutUint32(c[3:7], t.Write1)
+	binary.LittleEndian.PutUint32(c[11:15], t.Write2)
+	return w
 }
 
 func (w *Word) PacRead() PacRead {
-	return castWord[PacRead](w)
+	c := &w.Content
+	var d PacRead
+	d.Read1 = binary.LittleEndian.Uint32(c[3:7])
+	d.Read2 = binary.LittleEndian.Uint32(c[11:15])
+	return d
 }
 
 func (t PacRead) ToWord() Word {
-	return packWord[PacRead](WordTypeRead, t)
+	w := Word{Type: WordTypeRead}
+	c := &w.Content
+	binary.LittleEndian.PutUint32(c[3:7], t.Read1)
+	binary.LittleEndian.PutUint32(c[11:15], t.Read2)
+	return w
 }
 
 func (w *Word) PacError() PacError {
-	return castWord[PacError](w)
+	return PacError{Err: w.Content[0]}
 }
 
 func (t PacError) ToWord() Word {
-	return packWord[PacError](WordTypeError, t)
+	w := Word{Type: WordTypeError}
+	w.Content[0] = t.Err
+	return w
 }
+
+const (
+	msgHeaderSize = 8
+	wordSize      = 16
+)
 
 type MsgHeader struct { // [8]byte
 	Type      MsgType // byte
@@ -203,14 +236,26 @@ type Msg struct {
 }
 
 func (m *Msg) Read(r io.Reader) error {
-	err := binary.Read(r, binary.LittleEndian, &m.Header)
-	if err != nil {
+	var hdr [msgHeaderSize]byte
+	if _, err := io.ReadFull(r, hdr[:]); err != nil {
+		return err
+	}
+	m.Header.Type = MsgType(hdr[0])
+	m.Header.Timestamp = binary.LittleEndian.Uint32(hdr[1:5])
+	m.Header.NumWords = binary.LittleEndian.Uint16(hdr[6:8])
+
+	n := int(m.Header.NumWords)
+	buf := make([]byte, n*wordSize)
+	if _, err := io.ReadFull(r, buf); err != nil {
 		return err
 	}
 
-	for i := uint16(0); i < m.Header.NumWords; i++ {
-		word := Word{}
-		binary.Read(r, binary.LittleEndian, &word)
+	m.Words = slices.Grow(m.Words, n)
+	for i := range n {
+		b := buf[i*wordSize : (i+1)*wordSize]
+		var word Word
+		word.Type = WordType(b[0])
+		copy(word.Content[:], b[1:])
 		m.Words = append(m.Words, word)
 	}
 
@@ -218,14 +263,18 @@ func (m *Msg) Read(r io.Reader) error {
 }
 
 func (m *Msg) Write(w io.Writer) error {
-	err := binary.Write(w, binary.LittleEndian, &m.Header)
-	if err != nil {
-		return err
+	n := int(m.Header.NumWords)
+	buf := make([]byte, msgHeaderSize+n*wordSize)
+	buf[0] = byte(m.Header.Type)
+	binary.LittleEndian.PutUint32(buf[1:5], m.Header.Timestamp)
+	binary.LittleEndian.PutUint16(buf[6:8], m.Header.NumWords)
+
+	for i := range n {
+		b := buf[msgHeaderSize+i*wordSize : msgHeaderSize+(i+1)*wordSize]
+		b[0] = byte(m.Words[i].Type)
+		copy(b[1:], m.Words[i].Content[:])
 	}
 
-	for i := uint16(0); i < m.Header.NumWords; i++ {
-		binary.Write(w, binary.LittleEndian, &m.Words[i])
-	}
-
-	return nil
+	_, err := w.Write(buf)
+	return err
 }

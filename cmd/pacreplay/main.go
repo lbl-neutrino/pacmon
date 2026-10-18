@@ -38,7 +38,8 @@ func replayFile(socket *zmq.Socket, fname string, tOffset *int64) error {
 	defer r.Close()
 
 	sent := 0
-	lastReport := time.Now()
+	startTime := time.Now()
+	lastReport := startTime
 
 	send := func(msg []byte) error {
 		if len(msg) < 5 {
@@ -78,7 +79,10 @@ func replayFile(socket *zmq.Socket, fname string, tOffset *int64) error {
 			return err
 		}
 	}
-	fmt.Fprintf(os.Stderr, "\r  %d/%d\n", sent, r.Len)
+
+	elapsed := time.Now().Unix() - startTime.Unix()
+	fmt.Fprintf(os.Stderr, "\r  %d/%d    (Elapsed: %d s)\n",
+		sent, r.Len, elapsed)
 
 	return nil
 }

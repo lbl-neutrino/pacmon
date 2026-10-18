@@ -76,10 +76,10 @@ func runSingle(
 
 	defer wg.Done()
 
-	monitor := NewMonitor()
-	monitor10s := NewMonitor10s()
-	// monitorPlots := NewMonitorPlots()
-	disabledListMonitor := NewDisabledListMonitor()
+	monitor := NewMonitor(ioGroup)
+	monitor10s := NewMonitor10s(ioGroup)
+	// monitorPlots := NewMonitorPlots(ioGroup)
+	disabledListMonitor := NewDisabledListMonitor(ioGroup)
 	syncMonitor := NewSyncMonitor()
 	trigMonitor := NewTrigMonitor()
 
@@ -117,10 +117,10 @@ func runSingle(
 		msgTime := int64(msg.Header.Timestamp)
 
 		for _, word := range msg.Words {
-			monitor.ProcessWord(word, ioGroup)
-			monitor10s.ProcessWord(word, ioGroup)
-			// monitorPlots.ProcessWord(word, ioGroup)
-			disabledListMonitor.ProcessWord(word, ioGroup)
+			monitor.ProcessWord(word)
+			monitor10s.ProcessWord(word)
+			// monitorPlots.ProcessWord(word)
+			disabledListMonitor.ProcessWord(word)
 
 			syncMonitor.ProcessWord(word, ioGroup)
 			trigMonitor.ProcessWord(word, ioGroup)
@@ -147,7 +147,7 @@ func runSingle(
 				time.Unix(msgTime, 0),
 				now.Sub(last).Seconds(),
 			)
-			monitor = NewMonitor() // Reset monitor
+			monitor = NewMonitor(ioGroup) // Reset monitor
 			last = now
 		}
 
@@ -160,7 +160,7 @@ func runSingle(
 				time.Unix(msgTime, 0),
 				now10s.Sub(last10s).Seconds(),
 			)
-			monitor10s = NewMonitor10s() // Reset monitor
+			monitor10s = NewMonitor10s(ioGroup) // Reset monitor
 			last10s = now10s
 		}
 
@@ -168,7 +168,7 @@ func runSingle(
 		// 	nowPlots = time.Now()
 		// 	monitorPlots.PlotMetrics(geometry, ioGroup,
 		// 		plotNorms, nowPlots.Sub(lastPlots).Seconds())
-		// 	monitorPlots = NewMonitorPlots() // Reset monitor
+		// 	monitorPlots = NewMonitorPlots(ioGroup) // Reset monitor
 		// 	lastPlots = nowPlots
 		// }
 
@@ -182,7 +182,7 @@ func runSingle(
 		// 		ioGroup,
 		// 	)
 		// 	// Reset monitor
-		// 	disabledListMonitor = NewDisabledListMonitor()
+		// 	disabledListMonitor = NewDisabledListMonitor(ioGroup)
 		// 	lastDisabledList = nowDisabledList
 		// }
 

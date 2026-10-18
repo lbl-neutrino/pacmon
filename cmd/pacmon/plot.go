@@ -26,7 +26,12 @@ func (mPlots *MonitorPlots) PlotMetrics(
 	timeDiff float64,
 ) {
 
-	length := len(mPlots.ADCMeanPerChannel)
+	length := 0
+	for _, n := range mPlots.NPacketsPerChannel[:] {
+		if n > 0 {
+			length++
+		}
+	}
 	if length == 0 {
 		return
 	}
@@ -55,7 +60,11 @@ func (mPlots *MonitorPlots) PlotMetrics(
 
 	i := 0
 
-	for channelKey, adc := range mPlots.ADCMeanPerChannel {
+	for channel, adc := range mPlots.ADCMeanPerChannel[:] {
+		if mPlots.NPacketsPerChannel[channel] == 0 {
+			continue
+		}
+		channelKey := channelKeyAt(mPlots.IoGroup, channel)
 
 		// convert from ChannelKey to ChannelTile
 		var channelTile ChannelTile
@@ -83,7 +92,7 @@ func (mPlots *MonitorPlots) PlotMetrics(
 		// RMS
 		xyzsRMS[i].X = xy.X
 		xyzsRMS[i].Y = xy.Y
-		xyzsRMS[i].Z = mPlots.ADCRMSPerChannel[channelKey] / normRMS
+		xyzsRMS[i].Z = mPlots.ADCRMSPerChannel[channel] / normRMS
 		if xyzsRMS[i].Z > 1 {
 			xyzsRMS[i].Z = 1.
 		}
@@ -91,7 +100,7 @@ func (mPlots *MonitorPlots) PlotMetrics(
 		// Rate
 		xyzsRate[i].X = xy.X
 		xyzsRate[i].Y = xy.Y
-		nPackets := float64(mPlots.NPacketsPerChannel[channelKey])
+		nPackets := float64(mPlots.NPacketsPerChannel[channel])
 		rate := nPackets / timeDiff
 		xyzsRate[i].Z = rate / normRate
 		if xyzsRate[i].Z > 1 {

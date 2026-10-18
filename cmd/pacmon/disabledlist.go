@@ -8,14 +8,15 @@ import (
 )
 
 func channelsAboveThreshold(
-	inputMap map[ChannelKey]DataStatusCounts,
+	counts []DataStatusCounts,
+	ioGroup uint8,
 	duration float64,
 	threshold float64,
 ) []ChannelKey {
 	var channelsAbove []ChannelKey
-	for channel, value := range inputMap {
+	for channel, value := range counts {
 		if float64(value.Total)/duration > threshold {
-			channelsAbove = append(channelsAbove, channel)
+			channelsAbove = append(channelsAbove, channelKeyAt(ioGroup, channel))
 		}
 	}
 	return channelsAbove
@@ -28,7 +29,8 @@ func (dlm *DisabledListMonitor) WriteDisabledList(
 ) {
 
 	hotChannels := channelsAboveThreshold(
-		dlm.DataStatusCountsPerChannel,
+		dlm.DataStatusCountsPerChannel[:],
+		dlm.IoGroup,
 		duration,
 		threshold,
 	)

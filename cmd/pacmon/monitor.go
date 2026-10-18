@@ -58,38 +58,60 @@ const (
 	FifoFull2        FifoFlag = 3
 )
 
+// The per-io-channel, per-chip and per-channel counters are stored in flat
+// arrays rather than maps. Each monitor is bound to a single io group, so the
+// io group is not part of the index. Io channels are numbered from 1. Words
+// whose io channel or chip ID fall outside these bounds are not recorded in
+// the corresponding arrays.
+const (
+	MAX_IO_CHANNELS          = 40
+	MAX_CHIPS_PER_IO_CHANNEL = 160
+	MAX_CHANNELS_PER_CHIP    = 64
+
+	// Io channels index directly, so slot 0 is unused
+	NUM_IO_CHANNELS = MAX_IO_CHANNELS + 1
+	NUM_CHIPS       = NUM_IO_CHANNELS * MAX_CHIPS_PER_IO_CHANNEL
+	NUM_CHANNELS    = NUM_CHIPS * MAX_CHANNELS_PER_CHIP
+
+	NUM_WORD_TYPES = 256
+)
+
 type Monitor struct {
-	WordTypeCounts map[WordType]uint
+	IoGroup uint8
 
-	DataStatusCounts        map[IoChannelKey]DataStatusCounts
-	DataStatusCountsPerChip map[ChipKey]DataStatusCounts
+	WordTypeCounts [NUM_WORD_TYPES]uint
 
-	ConfigStatusCounts        map[IoChannelKey]ConfigStatusCounts
-	ConfigStatusCountsPerChip map[ChipKey]ConfigStatusCounts
+	DataStatusCounts        [NUM_IO_CHANNELS]DataStatusCounts
+	DataStatusCountsPerChip [NUM_CHIPS]DataStatusCounts
 
-	OtherStatusCounts        map[IoChannelKey]uint
-	OtherStatusCountsPerChip map[ChipKey]uint
+	ConfigStatusCounts        [NUM_IO_CHANNELS]ConfigStatusCounts
+	ConfigStatusCountsPerChip [NUM_CHIPS]ConfigStatusCounts
 
-	FifoFlagCounts map[ChannelKey]FifoFlagCounts
+	OtherStatusCounts        [NUM_IO_CHANNELS]uint
+	OtherStatusCountsPerChip [NUM_CHIPS]uint
+
+	FifoFlagCounts [NUM_CHANNELS]FifoFlagCounts
 }
 
 type Monitor10s struct {
+	IoGroup uint8
+
 	ADCMeanTotal float64
 	ADCRMSTotal  float64
 
-	ADCMeanPerChip map[ChipKey]float64
-	ADCRMSPerChip  map[ChipKey]float64
+	ADCMeanPerChip [NUM_CHIPS]float64
+	ADCRMSPerChip  [NUM_CHIPS]float64
 
-	ADCMeanPerChannel map[ChannelKey]float64
-	ADCRMSPerChannel  map[ChannelKey]float64
+	ADCMeanPerChannel [NUM_CHANNELS]float64
+	ADCRMSPerChannel  [NUM_CHANNELS]float64
 
 	NPacketsTotal      uint32
-	NPacketsPerChip    map[ChipKey]uint32
-	NPacketsPerChannel map[ChannelKey]uint32
+	NPacketsPerChip    [NUM_CHIPS]uint32
+	NPacketsPerChannel [NUM_CHANNELS]uint32
 
-	DataStatusCountsPerChannel   map[ChannelKey]DataStatusCounts
-	ConfigStatusCountsPerChannel map[ChannelKey]ConfigStatusCounts
-	OtherStatusCountsPerChannel  map[ChannelKey]uint
+	DataStatusCountsPerChannel   [NUM_CHANNELS]DataStatusCounts
+	ConfigStatusCountsPerChannel [NUM_CHANNELS]ConfigStatusCounts
+	OtherStatusCountsPerChannel  [NUM_CHANNELS]uint
 
 	TopHotChannels []ChannelKey
 	TopHotValues   []uint
@@ -103,24 +125,28 @@ type Monitor10s struct {
 	TopADCRMSChannels []ChannelKey
 	TopADCRMSValues   []float64
 
-	InvalidParityPerChip   map[ChipKey]uint32
+	InvalidParityPerChip   [NUM_CHIPS]uint32
 	TopInvalidParityChips  []ChipKey
 	TopInvalidParityCounts []uint32
 
-	SharedFifoFullPerChip   map[ChipKey]uint32
+	SharedFifoFullPerChip   [NUM_CHIPS]uint32
 	TopSharedFifoFullChips  []ChipKey
 	TopSharedFifoFullCounts []uint32
 }
 
 type MonitorPlots struct {
-	ADCMeanPerChannel          map[ChannelKey]float64
-	ADCRMSPerChannel           map[ChannelKey]float64
-	NPacketsPerChannel         map[ChannelKey]uint32
-	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
+	IoGroup uint8
+
+	ADCMeanPerChannel          [NUM_CHANNELS]float64
+	ADCRMSPerChannel           [NUM_CHANNELS]float64
+	NPacketsPerChannel         [NUM_CHANNELS]uint32
+	DataStatusCountsPerChannel [NUM_CHANNELS]DataStatusCounts
 }
 
 type DisabledListMonitor struct {
-	DataStatusCountsPerChannel map[ChannelKey]DataStatusCounts
+	IoGroup uint8
+
+	DataStatusCountsPerChannel [NUM_CHANNELS]DataStatusCounts
 
 	TopHotChannels []ChannelKey
 	TopHotValues   []uint
@@ -137,59 +163,20 @@ type TrigMonitor struct {
 	Time    []uint32
 }
 
-func NewMonitor() *Monitor {
-	return &Monitor{
-		WordTypeCounts: make(map[WordType]uint),
-		DataStatusCounts: make(
-			map[IoChannelKey]DataStatusCounts,
-		),
-		DataStatusCountsPerChip: make(map[ChipKey]DataStatusCounts),
-		ConfigStatusCounts: make(
-			map[IoChannelKey]ConfigStatusCounts,
-		),
-		ConfigStatusCountsPerChip: make(map[ChipKey]ConfigStatusCounts),
-		OtherStatusCounts:         make(map[IoChannelKey]uint),
-		OtherStatusCountsPerChip:  make(map[ChipKey]uint),
-		FifoFlagCounts:            make(map[ChannelKey]FifoFlagCounts),
-	}
+func NewMonitor(ioGroup uint8) *Monitor {
+	return &Monitor{IoGroup: ioGroup}
 }
 
-func NewMonitor10s() *Monitor10s {
-	return &Monitor10s{
-		ADCMeanPerChip:     make(map[ChipKey]float64),
-		ADCRMSPerChip:      make(map[ChipKey]float64),
-		NPacketsPerChip:    make(map[ChipKey]uint32),
-		ADCMeanPerChannel:  make(map[ChannelKey]float64),
-		ADCRMSPerChannel:   make(map[ChannelKey]float64),
-		NPacketsPerChannel: make(map[ChannelKey]uint32),
-		DataStatusCountsPerChannel: make(
-			map[ChannelKey]DataStatusCounts,
-		),
-		ConfigStatusCountsPerChannel: make(
-			map[ChannelKey]ConfigStatusCounts,
-		),
-		OtherStatusCountsPerChannel: make(map[ChannelKey]uint),
-		InvalidParityPerChip:        make(map[ChipKey]uint32),
-		SharedFifoFullPerChip:       make(map[ChipKey]uint32),
-	}
-}
-func NewMonitorPlots() *MonitorPlots {
-	return &MonitorPlots{
-		ADCMeanPerChannel:  make(map[ChannelKey]float64),
-		ADCRMSPerChannel:   make(map[ChannelKey]float64),
-		NPacketsPerChannel: make(map[ChannelKey]uint32),
-		DataStatusCountsPerChannel: make(
-			map[ChannelKey]DataStatusCounts,
-		),
-	}
+func NewMonitor10s(ioGroup uint8) *Monitor10s {
+	return &Monitor10s{IoGroup: ioGroup}
 }
 
-func NewDisabledListMonitor() *DisabledListMonitor {
-	return &DisabledListMonitor{
-		DataStatusCountsPerChannel: make(
-			map[ChannelKey]DataStatusCounts,
-		),
-	}
+func NewMonitorPlots(ioGroup uint8) *MonitorPlots {
+	return &MonitorPlots{IoGroup: ioGroup}
+}
+
+func NewDisabledListMonitor(ioGroup uint8) *DisabledListMonitor {
+	return &DisabledListMonitor{IoGroup: ioGroup}
 }
 
 func NewSyncMonitor() *SyncMonitor {
@@ -200,25 +187,58 @@ func NewTrigMonitor() *TrigMonitor {
 	return &TrigMonitor{}
 }
 
-func newIoChannelKey(ioGroup uint8, pacData PacData) IoChannelKey {
-	return IoChannelKey{IoGroup: ioGroup, IoChannel: pacData.IoChannel}
+// ioChannelIndex returns the array index for the packet's io channel, and
+// false if the io channel is out of bounds
+func ioChannelIndex(pacData PacData) (int, bool) {
+	ioChannel := int(pacData.IoChannel)
+	return ioChannel, ioChannel >= 1 && ioChannel <= MAX_IO_CHANNELS
 }
 
-func newChipKey(ioGroup uint8, pacData PacData) ChipKey {
+// chipIndex returns the array index for the packet's chip, and false if the
+// io channel or chip ID is out of bounds
+func chipIndex(pacData PacData) (int, bool) {
+	ioChannel, ok := ioChannelIndex(pacData)
+	chipID := int(pacData.Packet.Chip())
+	ok = ok && chipID < MAX_CHIPS_PER_IO_CHANNEL
+	return ioChannel*MAX_CHIPS_PER_IO_CHANNEL + chipID, ok
+}
+
+// channelIndex returns the array index for the packet's channel, and false if
+// the io channel or chip ID is out of bounds
+func channelIndex(pacData PacData) (int, bool) {
+	chip, ok := chipIndex(pacData)
+	channelID := int(pacData.Packet.Channel()) // 6 bits, always in bounds
+	return chip*MAX_CHANNELS_PER_CHIP + channelID, ok
+}
+
+// The inverses of the above, for reporting
+
+func ioChannelKeyAt(ioGroup uint8, ioChannel int) IoChannelKey {
+	return IoChannelKey{IoGroup: ioGroup, IoChannel: uint8(ioChannel)}
+}
+
+func chipKeyAt(ioGroup uint8, chip int) ChipKey {
 	return ChipKey{
 		IoGroup:   ioGroup,
-		IoChannel: pacData.IoChannel,
-		ChipID:    pacData.Packet.Chip(),
+		IoChannel: uint8(chip / MAX_CHIPS_PER_IO_CHANNEL),
+		ChipID:    uint8(chip % MAX_CHIPS_PER_IO_CHANNEL),
 	}
 }
 
-func newChannelKey(ioGroup uint8, pacData PacData) ChannelKey {
+func channelKeyAt(ioGroup uint8, channel int) ChannelKey {
+	chip := chipKeyAt(ioGroup, channel/MAX_CHANNELS_PER_CHIP)
 	return ChannelKey{
-		IoGroup:   ioGroup,
-		IoChannel: pacData.IoChannel,
-		ChipID:    pacData.Packet.Chip(),
-		ChannelID: pacData.Packet.Channel(),
+		IoGroup:   chip.IoGroup,
+		IoChannel: chip.IoChannel,
+		ChipID:    chip.ChipID,
+		ChannelID: uint8(channel % MAX_CHANNELS_PER_CHIP),
 	}
+}
+
+// anyStatuses reports whether any packet (data, config or other) was recorded
+// for an index, i.e. whether it would have had an entry in the old maps
+func anyStatuses(data DataStatusCounts, config ConfigStatusCounts, other uint) bool {
+	return data.Total+config.Total+other > 0
 }
 
 // Record increments the counters for a data packet
@@ -260,56 +280,47 @@ func (c *ConfigStatusCounts) Record(packet Packet) {
 }
 
 // recordStatuses classifies the packet as data, config or other and updates
-// the corresponding counts for key. An entry is ensured in every map so that
-// zero rates still get reported.
-func recordStatuses[K comparable](
-	dataCounts map[K]DataStatusCounts,
-	configCounts map[K]ConfigStatusCounts,
-	otherCounts map[K]uint,
-	key K,
+// the corresponding counts at index i
+func recordStatuses(
+	dataCounts []DataStatusCounts,
+	configCounts []ConfigStatusCounts,
+	otherCounts []uint,
+	i int,
 	packet Packet,
 ) {
-	dataStatuses := dataCounts[key]
-	configStatuses := configCounts[key]
-	otherStatuses := otherCounts[key]
-
 	switch packet.Type() {
 	case PacketTypeRead, PacketTypeWrite:
-		configStatuses.Record(packet)
+		configCounts[i].Record(packet)
 	case PacketTypeData:
-		dataStatuses.Record(packet)
+		dataCounts[i].Record(packet)
 	default:
-		otherStatuses++
+		otherCounts[i]++
 	}
-
-	dataCounts[key] = dataStatuses
-	configCounts[key] = configStatuses
-	otherCounts[key] = otherStatuses
 }
 
-func (m *Monitor) ProcessWord(word Word, ioGroup uint8) {
+func (m *Monitor) ProcessWord(word Word) {
 	m.RecordType(word)
-	m.RecordStatuses(word, ioGroup)
-	m.RecordFifoFlags(word, ioGroup)
+	m.RecordStatuses(word)
+	m.RecordFifoFlags(word)
 }
 
-func (m10s *Monitor10s) ProcessWord(word Word, ioGroup uint8) {
-	m10s.RecordStatuses(word, ioGroup)
-	m10s.RecordADC(word, ioGroup)
-	m10s.RecordChipStats(word, ioGroup)
+func (m10s *Monitor10s) ProcessWord(word Word) {
+	m10s.RecordStatuses(word)
+	m10s.RecordADC(word)
+	m10s.RecordChipStats(word)
 }
 
-func (mPlots *MonitorPlots) ProcessWord(word Word, ioGroup uint8) {
-	// mPlots.RecordStatuses(word, ioGroup)
-	mPlots.RecordADC(word, ioGroup)
+func (mPlots *MonitorPlots) ProcessWord(word Word) {
+	// mPlots.RecordStatuses(word)
+	mPlots.RecordADC(word)
 }
 
 func (sm *SyncMonitor) ProcessWord(word Word, ioGroup uint8) {
 	sm.RecordSync(word, ioGroup)
 }
 
-func (dlm *DisabledListMonitor) ProcessWord(word Word, ioGroup uint8) {
-	dlm.RecordStatuses(word, ioGroup)
+func (dlm *DisabledListMonitor) ProcessWord(word Word) {
+	dlm.RecordStatuses(word)
 }
 
 func (tm *TrigMonitor) ProcessWord(word Word, ioGroup uint8) {
@@ -325,48 +336,55 @@ func (m *Monitor) RecordType(word Word) {
 	m.WordTypeCounts[newWordType]++
 }
 
-func (m *Monitor10s) RecordChipStats(word Word, ioGroup uint8) {
+func (m *Monitor10s) RecordChipStats(word Word) {
 	pacData := word.PacData()
 	packet := pacData.Packet
-	chipKey := newChipKey(ioGroup, pacData)
+	chip, ok := chipIndex(pacData)
+	if !ok {
+		return
+	}
 
 	isInvalid := !packet.ValidParity()
 	flag := FifoFlag(packet.SharedFifoFlags())
 	isSharedFifoFull := flag == FifoFull1 || flag == FifoFull2
 
 	if isInvalid {
-		m.InvalidParityPerChip[chipKey]++
+		m.InvalidParityPerChip[chip]++
 	}
 
 	if isSharedFifoFull {
-		m.SharedFifoFullPerChip[chipKey]++
+		m.SharedFifoFullPerChip[chip]++
 	}
 }
 
-func (m *Monitor) RecordStatuses(word Word, ioGroup uint8) {
+func (m *Monitor) RecordStatuses(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
 
 	pacData := word.PacData()
 
-	recordStatuses(
-		m.DataStatusCounts,
-		m.ConfigStatusCounts,
-		m.OtherStatusCounts,
-		newIoChannelKey(ioGroup, pacData),
-		pacData.Packet,
-	)
-	recordStatuses(
-		m.DataStatusCountsPerChip,
-		m.ConfigStatusCountsPerChip,
-		m.OtherStatusCountsPerChip,
-		newChipKey(ioGroup, pacData),
-		pacData.Packet,
-	)
+	if ioChannel, ok := ioChannelIndex(pacData); ok {
+		recordStatuses(
+			m.DataStatusCounts[:],
+			m.ConfigStatusCounts[:],
+			m.OtherStatusCounts[:],
+			ioChannel,
+			pacData.Packet,
+		)
+	}
+	if chip, ok := chipIndex(pacData); ok {
+		recordStatuses(
+			m.DataStatusCountsPerChip[:],
+			m.ConfigStatusCountsPerChip[:],
+			m.OtherStatusCountsPerChip[:],
+			chip,
+			pacData.Packet,
+		)
+	}
 }
 
-func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
+func (m *Monitor) RecordFifoFlags(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -377,9 +395,12 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 	}
 
 	packet := pacData.Packet
-	channel := newChannelKey(ioGroup, pacData)
+	channel, ok := channelIndex(pacData)
+	if !ok {
+		return
+	}
 
-	fifoFlagCounts := m.FifoFlagCounts[channel]
+	fifoFlagCounts := &m.FifoFlagCounts[channel]
 
 	// Local FIFOs
 	switch FifoFlag(packet.LocalFifoFlags()) {
@@ -400,29 +421,29 @@ func (m *Monitor) RecordFifoFlags(word Word, ioGroup uint8) {
 	case FifoFull1, FifoFull2:
 		fifoFlagCounts.SharedFifoFull++
 	}
-
-	// Update monitor
-	m.FifoFlagCounts[channel] = fifoFlagCounts
-
 }
 
-func (m10s *Monitor10s) RecordStatuses(word Word, ioGroup uint8) {
+func (m10s *Monitor10s) RecordStatuses(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
 
 	pacData := word.PacData()
+	channel, ok := channelIndex(pacData)
+	if !ok {
+		return
+	}
 
 	recordStatuses(
-		m10s.DataStatusCountsPerChannel,
-		m10s.ConfigStatusCountsPerChannel,
-		m10s.OtherStatusCountsPerChannel,
-		newChannelKey(ioGroup, pacData),
+		m10s.DataStatusCountsPerChannel[:],
+		m10s.ConfigStatusCountsPerChannel[:],
+		m10s.OtherStatusCountsPerChannel[:],
+		channel,
 		pacData.Packet,
 	)
 }
 
-func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
+func (m10s *Monitor10s) RecordADC(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -435,9 +456,6 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	}
 
 	packet := pacData.Packet
-	channel := newChannelKey(ioGroup, pacData)
-	chip := newChipKey(ioGroup, pacData)
-
 	adc := float64(packet.Data())
 
 	m10s.ADCMeanTotal, m10s.ADCRMSTotal = UpdateMeanRMS(
@@ -448,6 +466,12 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	)
 	m10s.NPacketsTotal++
 
+	channel, ok := channelIndex(pacData)
+	if !ok {
+		return
+	}
+	chip := channel / MAX_CHANNELS_PER_CHIP
+
 	m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip] = UpdateMeanRMS(
 		m10s.ADCMeanPerChip[chip],
 		m10s.ADCRMSPerChip[chip],
@@ -456,51 +480,72 @@ func (m10s *Monitor10s) RecordADC(word Word, ioGroup uint8) {
 	)
 	m10s.NPacketsPerChip[chip]++
 
-	mean, rms := UpdateMeanRMS(
-		m10s.ADCMeanPerChannel[channel],
-		m10s.ADCRMSPerChannel[channel],
-		m10s.NPacketsPerChannel[channel],
-		adc,
-	)
-	m10s.ADCMeanPerChannel[channel] = mean
-	m10s.ADCRMSPerChannel[channel] = rms
+	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] =
+		UpdateMeanRMS(
+			m10s.ADCMeanPerChannel[channel],
+			m10s.ADCRMSPerChannel[channel],
+			m10s.NPacketsPerChannel[channel],
+			adc,
+		)
 	m10s.NPacketsPerChannel[channel]++
 
 }
 
 func (m10s *Monitor10s) UpdateTopHotChannels() {
-	m10s.TopHotChannels, m10s.TopHotValues = sortByDataRates(
-		m10s.DataStatusCountsPerChannel,
-		100,
-		false,
+	ioGroup := m10s.IoGroup
+
+	// A channel is reported if any packet was recorded for it
+	totals := make([]uint, NUM_CHANNELS)
+	for i, counts := range m10s.DataStatusCountsPerChannel[:] {
+		totals[i] = counts.Total
+	}
+	hasStatuses := func(i int) bool {
+		return anyStatuses(
+			m10s.DataStatusCountsPerChannel[i],
+			m10s.ConfigStatusCountsPerChannel[i],
+			m10s.OtherStatusCountsPerChannel[i],
+		)
+	}
+	hasADC := func(i int) bool { return m10s.NPacketsPerChannel[i] > 0 }
+
+	m10s.TopHotChannels, m10s.TopHotValues = sortByValue(
+		totals, hasStatuses, 100, false, ioGroup, channelKeyAt,
 	)
-	m10s.BottomColdChannels, m10s.BottomColdValues = sortByDataRates(
-		m10s.DataStatusCountsPerChannel,
-		100,
-		true,
+	m10s.BottomColdChannels, m10s.BottomColdValues = sortByValue(
+		totals, hasStatuses, 100, true, ioGroup, channelKeyAt,
 	)
-	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByADC(
-		m10s.ADCMeanPerChannel,
-		100,
+	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByValue(
+		m10s.ADCMeanPerChannel[:], hasADC, 100, false, ioGroup, channelKeyAt,
 	)
-	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByADC(
-		m10s.ADCRMSPerChannel,
-		100,
+	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByValue(
+		m10s.ADCRMSPerChannel[:], hasADC, 100, false, ioGroup, channelKeyAt,
 	)
 }
 
 func (m10s *Monitor10s) UpdateTopChips() {
+	ioGroup := m10s.IoGroup
+	invalidParity := m10s.InvalidParityPerChip[:]
+	sharedFifoFull := m10s.SharedFifoFullPerChip[:]
+
 	m10s.TopInvalidParityChips, m10s.TopInvalidParityCounts = sortByValue(
-		m10s.InvalidParityPerChip,
+		invalidParity,
+		func(i int) bool { return invalidParity[i] > 0 },
 		100,
+		false,
+		ioGroup,
+		chipKeyAt,
 	)
 	m10s.TopSharedFifoFullChips, m10s.TopSharedFifoFullCounts = sortByValue(
-		m10s.SharedFifoFullPerChip,
+		sharedFifoFull,
+		func(i int) bool { return sharedFifoFull[i] > 0 },
 		100,
+		false,
+		ioGroup,
+		chipKeyAt,
 	)
 }
 
-func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
+func (mPlots *MonitorPlots) RecordADC(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -512,23 +557,25 @@ func (mPlots *MonitorPlots) RecordADC(word Word, ioGroup uint8) {
 		return
 	}
 	packet := pacData.Packet
-	channel := newChannelKey(ioGroup, pacData)
+	channel, ok := channelIndex(pacData)
+	if !ok {
+		return
+	}
 
 	adc := float64(packet.Data())
 
-	mean, rms := UpdateMeanRMS(
-		mPlots.ADCMeanPerChannel[channel],
-		mPlots.ADCRMSPerChannel[channel],
-		mPlots.NPacketsPerChannel[channel],
-		adc,
-	)
-	mPlots.ADCMeanPerChannel[channel] = mean
-	mPlots.ADCRMSPerChannel[channel] = rms
+	mPlots.ADCMeanPerChannel[channel], mPlots.ADCRMSPerChannel[channel] =
+		UpdateMeanRMS(
+			mPlots.ADCMeanPerChannel[channel],
+			mPlots.ADCRMSPerChannel[channel],
+			mPlots.NPacketsPerChannel[channel],
+			adc,
+		)
 	mPlots.NPacketsPerChannel[channel]++
 
 }
 
-func (dlm *DisabledListMonitor) RecordStatuses(word Word, ioGroup uint8) {
+func (dlm *DisabledListMonitor) RecordStatuses(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -538,10 +585,9 @@ func (dlm *DisabledListMonitor) RecordStatuses(word Word, ioGroup uint8) {
 		return
 	}
 
-	channel := newChannelKey(ioGroup, pacData)
-	dataStatuses := dlm.DataStatusCountsPerChannel[channel]
-	dataStatuses.Record(pacData.Packet)
-	dlm.DataStatusCountsPerChannel[channel] = dataStatuses
+	if channel, ok := channelIndex(pacData); ok {
+		dlm.DataStatusCountsPerChannel[channel].Record(pacData.Packet)
+	}
 }
 
 func (sm *SyncMonitor) RecordSync(word Word, ioGroup uint8) {

@@ -5,7 +5,6 @@ import (
 	"cmp"
 	"math"
 	"slices"
-	"sort"
 
 	. "larpix/pacmon/pkg"
 )
@@ -58,87 +57,37 @@ func UpdateMeanRMS(
 	return newMean, math.Sqrt(newVariance)
 }
 
-// For sorting maps with arbitrary key types
-
-func sortByDataRates(
-	inputMap map[ChannelKey]DataStatusCounts,
+// sortByValue returns the keys and values of the n largest (or smallest, if
+// ascending) entries of values, considering only indices i for which
+// present(i) is true. keyAt converts an index back into a key.
+func sortByValue[K any, V cmp.Ordered](
+	values []V,
+	present func(i int) bool,
 	n int,
 	ascending bool,
-) ([]ChannelKey, []uint) {
-	// Create a slice to hold the keys
-	keys := make([]ChannelKey, 0, len(inputMap))
-
-	// Iterate over the map and add keys to the slice
-	for key := range inputMap {
-		keys = append(keys, key)
-	}
-
-	// Sort the keys based on the corresponding values
-	sort.Slice(keys, func(i, j int) bool {
-		if ascending {
-			return inputMap[keys[i]].Total < inputMap[keys[j]].Total
-		}
-		return inputMap[keys[i]].Total > inputMap[keys[j]].Total
-	})
-
-	// Extract top N keys and their corresponding values
-	topNKeys := make([]ChannelKey, 0, n)
-	topNValues := make([]uint, 0, n)
-	for i := 0; i < n && i < len(keys); i++ {
-		topNKeys = append(topNKeys, keys[i])
-		topNValues = append(topNValues, inputMap[keys[i]].Total)
-	}
-
-	return topNKeys, topNValues
-}
-
-func sortByADC(
-	inputMap map[ChannelKey]float64,
-	n int,
-) ([]ChannelKey, []float64) {
-	// Create a slice to hold the keys
-	keys := make([]ChannelKey, 0, len(inputMap))
-
-	// Iterate over the map and add keys to the slice
-	for key := range inputMap {
-		keys = append(keys, key)
-	}
-
-	// Sort the keys based on the corresponding values
-	sort.Slice(keys, func(i, j int) bool {
-		return inputMap[keys[i]] > inputMap[keys[j]]
-	})
-
-	// Extract top N keys and their corresponding values
-	topNKeys := make([]ChannelKey, 0, n)
-	topNValues := make([]float64, 0, n)
-	for i := 0; i < n && i < len(keys); i++ {
-		topNKeys = append(topNKeys, keys[i])
-		topNValues = append(topNValues, inputMap[keys[i]])
-	}
-
-	return topNKeys, topNValues
-}
-
-func sortByValue[K comparable, V cmp.Ordered](
-	inputMap map[K]V,
-	n int,
+	ioGroup uint8,
+	keyAt func(ioGroup uint8, i int) K,
 ) ([]K, []V) {
-	keys := make([]K, 0, len(inputMap))
-	for key := range inputMap {
-		keys = append(keys, key)
+	indices := make([]int, 0, len(values))
+	for i := range values {
+		if present(i) {
+			indices = append(indices, i)
+		}
 	}
 
-	// Sort descending by value
-	slices.SortFunc(keys, func(a, b K) int {
-		return cmp.Compare(inputMap[b], inputMap[a])
+	slices.SortFunc(indices, func(a, b int) int {
+		if ascending {
+			return cmp.Compare(values[a], values[b])
+		}
+		return cmp.Compare(values[b], values[a])
 	})
 
-	n = min(max(n, 0), len(keys))
-	topNKeys := keys[:n]
+	n = min(max(n, 0), len(indices))
+	topNKeys := make([]K, n)
 	topNValues := make([]V, n)
-	for i, k := range topNKeys {
-		topNValues[i] = inputMap[k]
+	for i, idx := range indices[:n] {
+		topNKeys[i] = keyAt(ioGroup, idx)
+		topNValues[i] = values[idx]
 	}
 
 	return topNKeys, topNValues

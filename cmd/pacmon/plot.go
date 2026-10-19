@@ -17,9 +17,12 @@ import (
 	"math"
 	"os"
 	"time"
+
+	"larpix/pacmon/cmd/pacmon/monitors"
 )
 
-func (mPlots *MonitorPlots) PlotMetrics(
+func plotMetrics(
+	mPlots *monitors.MonitorPlots,
 	geometry Geometry,
 	ioGroup uint8,
 	norms Norms,
@@ -64,9 +67,9 @@ func (mPlots *MonitorPlots) PlotMetrics(
 		if mPlots.NPacketsPerChannel[channel] == 0 {
 			continue
 		}
-		channelKey := channelKeyAt(mPlots.IoGroup, channel)
+		channelKey := monitors.ChannelKeyAt(mPlots.IoGroup, channel)
 
-		// convert from ChannelKey to ChannelTile
+		// convert from monitors.ChannelKey to ChannelTile
 		var channelTile ChannelTile
 		channelTile.IoGroup = 2 - (channelKey.IoGroup % 2)
 		channelTile.TileID = (uint8(channelKey.IoChannel)-1)/4 + 1 +

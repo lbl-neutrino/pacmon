@@ -20,6 +20,7 @@ import (
 
 	"github.com/felixge/fgprof"
 
+	"larpix/pacmon/cmd/pacmon/monitors"
 	. "larpix/pacmon/pkg"
 )
 
@@ -76,12 +77,12 @@ func runSingle(
 
 	defer wg.Done()
 
-	monitor := NewMonitor(ioGroup)
-	monitor10s := NewMonitor10s(ioGroup)
-	// monitorPlots := NewMonitorPlots(ioGroup)
-	disabledListMonitor := NewDisabledListMonitor(ioGroup)
-	syncMonitor := NewSyncMonitor()
-	trigMonitor := NewTrigMonitor()
+	monitor := monitors.NewMonitor(ioGroup)
+	monitor10s := monitors.NewMonitor10s(ioGroup)
+	// monitorPlots := monitors.NewMonitorPlots(ioGroup)
+	disabledListMonitor := monitors.NewDisabledListMonitor(ioGroup)
+	syncMonitor := monitors.NewSyncMonitor()
+	trigMonitor := monitors.NewTrigMonitor()
 
 	socket, err := zmq.NewSocket(zmq.SUB)
 	if err != nil {
@@ -127,27 +128,29 @@ func runSingle(
 		}
 
 		if len(syncMonitor.Time) > 0 {
-			syncMonitor.WriteToInflux(
+			writeSyncMonitorToInflux(
+				syncMonitor,
 				writeAPI,
 				time.Unix(msgTime, 0),
 			)
-			syncMonitor = NewSyncMonitor()
+			syncMonitor = monitors.NewSyncMonitor()
 		}
 
 		if len(trigMonitor.Time) > 0 {
-			// trigMonitor.WriteToInflux(writeAPI,
+			// writeTrigMonitorToInflux(trigMonitor, writeAPI,
 			// 	time.Unix(msgTime, 0))
-			trigMonitor = NewTrigMonitor()
+			trigMonitor = monitors.NewTrigMonitor()
 		}
 
 		if time.Since(last).Seconds() > 60 {
 			now = time.Now()
-			monitor.WriteToInflux(
+			writeMonitorToInflux(
+				monitor,
 				writeAPI,
 				time.Unix(msgTime, 0),
 				now.Sub(last).Seconds(),
 			)
-			monitor = NewMonitor(ioGroup) // Reset monitor
+			monitor = monitors.NewMonitor(ioGroup) // Reset monitor
 			last = now
 		}
 
@@ -155,20 +158,21 @@ func runSingle(
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.UpdateTopChips()
-			monitor10s.WriteToInflux(
+			writeMonitor10sToInflux(
+				monitor10s,
 				writeAPI,
 				time.Unix(msgTime, 0),
 				now10s.Sub(last10s).Seconds(),
 			)
-			monitor10s = NewMonitor10s(ioGroup) // Reset monitor
+			monitor10s = monitors.NewMonitor10s(ioGroup) // Reset monitor
 			last10s = now10s
 		}
 
 		// if time.Since(lastPlots).Seconds() > plotNorms.Freq {
 		// 	nowPlots = time.Now()
-		// 	monitorPlots.PlotMetrics(geometry, ioGroup,
+		// 	plotMetrics(monitorPlots, geometry, ioGroup,
 		// 		plotNorms, nowPlots.Sub(lastPlots).Seconds())
-		// 	monitorPlots = NewMonitorPlots(ioGroup) // Reset monitor
+		// 	monitorPlots = monitors.NewMonitorPlots(ioGroup) // Reset monitor
 		// 	lastPlots = nowPlots
 		// }
 
@@ -176,13 +180,14 @@ func runSingle(
 		// 	Seconds() >
 		// 	disabledListOptions.Freq {
 		// 	nowDisabledList = time.Now()
-		// 	disabledListMonitor.WriteDisabledList(
+		// 	writeDisabledList(
+		// 		disabledListMonitor,
 		// 		disabledListOptions.RateThreshold,
 		// 		time.Since(lastDisabledList).Seconds(),
 		// 		ioGroup,
 		// 	)
 		// 	// Reset monitor
-		// 	disabledListMonitor = NewDisabledListMonitor(ioGroup)
+		// 	disabledListMonitor = monitors.NewDisabledListMonitor(ioGroup)
 		// 	lastDisabledList = nowDisabledList
 		// }
 

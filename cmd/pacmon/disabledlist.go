@@ -5,24 +5,30 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"larpix/pacmon/cmd/pacmon/monitors"
 )
 
 func channelsAboveThreshold(
-	counts []DataStatusCounts,
+	counts []monitors.DataStatusCounts,
 	ioGroup uint8,
 	duration float64,
 	threshold float64,
-) []ChannelKey {
-	var channelsAbove []ChannelKey
+) []monitors.ChannelKey {
+	var channelsAbove []monitors.ChannelKey
 	for channel, value := range counts {
 		if float64(value.Total)/duration > threshold {
-			channelsAbove = append(channelsAbove, channelKeyAt(ioGroup, channel))
+			channelsAbove = append(
+				channelsAbove,
+				monitors.ChannelKeyAt(ioGroup, channel),
+			)
 		}
 	}
 	return channelsAbove
 }
 
-func (dlm *DisabledListMonitor) WriteDisabledList(
+func writeDisabledList(
+	dlm *monitors.DisabledListMonitor,
 	threshold float64,
 	duration float64,
 	ioGroup uint8,

@@ -267,6 +267,15 @@ func run(cmd *cobra.Command, args []string) {
 		geometryMod0 = LoadGeometry("layout/geometry_singlecube.json")
 	}
 
+	// A single --pacman-url applies to every IO group
+	if len(flags.PacmanURL) == 1 && len(flags.PacmanIog) > 1 {
+		url := flags.PacmanURL[0]
+		flags.PacmanURL = make([]string, len(flags.PacmanIog))
+		for i := range flags.PacmanURL {
+			flags.PacmanURL[i] = url
+		}
+	}
+
 	wg.Add(len(flags.PacmanURL))
 
 	for iPacman := 0; iPacman < len(flags.PacmanURL); iPacman++ {
@@ -330,7 +339,8 @@ func run(cmd *cobra.Command, args []string) {
 func main() {
 	cmd.PersistentFlags().
 		StringSliceVar(&flags.PacmanURL, "pacman-url", nil,
-			"Comma-separated list of PACMAN data server URLs")
+			"Comma-separated list of PACMAN data server URLs "+
+				"(a single URL applies to every IO group)")
 	cmd.PersistentFlags().
 		StringSliceVar(&flags.PacmanIog, "pacman-iog", nil,
 			"Comma-separated list of corresponding IO groups")

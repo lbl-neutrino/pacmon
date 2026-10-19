@@ -8,7 +8,7 @@ import (
 	. "larpix/pacmon/pkg"
 )
 
-type Monitor struct {
+type FastMonitor struct {
 	IoGroup uint8
 
 	WordTypeCounts [NUM_WORD_TYPES]uint
@@ -25,17 +25,17 @@ type Monitor struct {
 	FifoFlagCounts [NUM_CHANNELS]FifoFlagCounts
 }
 
-func NewMonitor(ioGroup uint8) *Monitor {
-	return &Monitor{IoGroup: ioGroup}
+func NewFastMonitor(ioGroup uint8) *FastMonitor {
+	return &FastMonitor{IoGroup: ioGroup}
 }
 
-func (m *Monitor) ProcessWord(word Word) {
+func (m *FastMonitor) ProcessWord(word Word) {
 	m.RecordType(word)
 	m.RecordStatuses(word)
 	m.RecordFifoFlags(word)
 }
 
-func (m *Monitor) RecordType(word Word) {
+func (m *FastMonitor) RecordType(word Word) {
 	newWordType := word.Type
 	if word.Type == WordTypeData {
 		packetType := word.PacData().Packet.Type()
@@ -44,7 +44,7 @@ func (m *Monitor) RecordType(word Word) {
 	m.WordTypeCounts[newWordType]++
 }
 
-func (m *Monitor) RecordStatuses(word Word) {
+func (m *FastMonitor) RecordStatuses(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -71,7 +71,7 @@ func (m *Monitor) RecordStatuses(word Word) {
 	}
 }
 
-func (m *Monitor) RecordFifoFlags(word Word) {
+func (m *FastMonitor) RecordFifoFlags(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -110,7 +110,7 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 	}
 }
 
-func (m *Monitor) WriteToInflux(
+func (m *FastMonitor) WriteToInflux(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -135,7 +135,7 @@ func (m *Monitor) WriteToInflux(
 
 }
 
-func (m *Monitor) writeDataStatusesRates(
+func (m *FastMonitor) writeDataStatusesRates(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -155,7 +155,7 @@ func (m *Monitor) writeDataStatusesRates(
 	}
 }
 
-func (m *Monitor) writeConfigStatusesRates(
+func (m *FastMonitor) writeConfigStatusesRates(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -175,7 +175,7 @@ func (m *Monitor) writeConfigStatusesRates(
 	}
 }
 
-func (m *Monitor) writeOtherStatusesRates(
+func (m *FastMonitor) writeOtherStatusesRates(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -195,7 +195,7 @@ func (m *Monitor) writeOtherStatusesRates(
 	}
 }
 
-func (m *Monitor) writeDataStatusesRatesPerChip(
+func (m *FastMonitor) writeDataStatusesRatesPerChip(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -215,7 +215,7 @@ func (m *Monitor) writeDataStatusesRatesPerChip(
 	}
 }
 
-func (m *Monitor) writeConfigStatusesRatesPerChip(
+func (m *FastMonitor) writeConfigStatusesRatesPerChip(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -235,7 +235,7 @@ func (m *Monitor) writeConfigStatusesRatesPerChip(
 	}
 }
 
-func (m *Monitor) writeOtherStatusesRatesPerChip(
+func (m *FastMonitor) writeOtherStatusesRatesPerChip(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
@@ -255,7 +255,7 @@ func (m *Monitor) writeOtherStatusesRatesPerChip(
 	}
 }
 
-func (m *Monitor) writeLocalFifoStatuses(
+func (m *FastMonitor) writeLocalFifoStatuses(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 ) {
@@ -282,7 +282,7 @@ func (m *Monitor) writeLocalFifoStatuses(
 	}
 }
 
-func (m *Monitor) writeSharedFifoStatuses(
+func (m *FastMonitor) writeSharedFifoStatuses(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 ) {

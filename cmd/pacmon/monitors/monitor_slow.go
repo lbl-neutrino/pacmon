@@ -8,7 +8,7 @@ import (
 	. "larpix/pacmon/pkg"
 )
 
-type Monitor10s struct {
+type SlowMonitor struct {
 	IoGroup uint8
 
 	ADCMeanTotal float64
@@ -49,17 +49,17 @@ type Monitor10s struct {
 	TopSharedFifoFullCounts []uint32
 }
 
-func NewMonitor10s(ioGroup uint8) *Monitor10s {
-	return &Monitor10s{IoGroup: ioGroup}
+func NewSlowMonitor(ioGroup uint8) *SlowMonitor {
+	return &SlowMonitor{IoGroup: ioGroup}
 }
 
-func (m10s *Monitor10s) ProcessWord(word Word) {
-	m10s.RecordStatuses(word)
-	m10s.RecordADC(word)
-	m10s.RecordChipStats(word)
+func (m *SlowMonitor) ProcessWord(word Word) {
+	m.RecordStatuses(word)
+	m.RecordADC(word)
+	m.RecordChipStats(word)
 }
 
-func (m *Monitor10s) RecordChipStats(word Word) {
+func (m *SlowMonitor) RecordChipStats(word Word) {
 	pacData := word.PacData()
 	packet := pacData.Packet
 	chip, ok := chipIndex(pacData)
@@ -80,7 +80,7 @@ func (m *Monitor10s) RecordChipStats(word Word) {
 	}
 }
 
-func (m10s *Monitor10s) RecordStatuses(word Word) {
+func (m *SlowMonitor) RecordStatuses(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -92,15 +92,15 @@ func (m10s *Monitor10s) RecordStatuses(word Word) {
 	}
 
 	recordStatuses(
-		m10s.DataStatusCountsPerChannel[:],
-		m10s.ConfigStatusCountsPerChannel[:],
-		m10s.OtherStatusCountsPerChannel[:],
+		m.DataStatusCountsPerChannel[:],
+		m.ConfigStatusCountsPerChannel[:],
+		m.OtherStatusCountsPerChannel[:],
 		channel,
 		pacData.Packet,
 	)
 }
 
-func (m10s *Monitor10s) RecordADC(word Word) {
+func (m *SlowMonitor) RecordADC(word Word) {
 	if word.Type != WordTypeData {
 		return
 	}
@@ -115,13 +115,13 @@ func (m10s *Monitor10s) RecordADC(word Word) {
 	packet := pacData.Packet
 	adc := float64(packet.Data())
 
-	m10s.ADCMeanTotal, m10s.ADCRMSTotal = UpdateMeanRMS(
-		m10s.ADCMeanTotal,
-		m10s.ADCRMSTotal,
-		m10s.NPacketsTotal,
+	m.ADCMeanTotal, m.ADCRMSTotal = UpdateMeanRMS(
+		m.ADCMeanTotal,
+		m.ADCRMSTotal,
+		m.NPacketsTotal,
 		adc,
 	)
-	m10s.NPacketsTotal++
+	m.NPacketsTotal++
 
 	channel, ok := channelIndex(pacData)
 	if !ok {
@@ -129,62 +129,62 @@ func (m10s *Monitor10s) RecordADC(word Word) {
 	}
 	chip := channel / MAX_CHANNELS_PER_CHIP
 
-	m10s.ADCMeanPerChip[chip], m10s.ADCRMSPerChip[chip] = UpdateMeanRMS(
-		m10s.ADCMeanPerChip[chip],
-		m10s.ADCRMSPerChip[chip],
-		m10s.NPacketsPerChip[chip],
+	m.ADCMeanPerChip[chip], m.ADCRMSPerChip[chip] = UpdateMeanRMS(
+		m.ADCMeanPerChip[chip],
+		m.ADCRMSPerChip[chip],
+		m.NPacketsPerChip[chip],
 		adc,
 	)
-	m10s.NPacketsPerChip[chip]++
+	m.NPacketsPerChip[chip]++
 
-	m10s.ADCMeanPerChannel[channel], m10s.ADCRMSPerChannel[channel] =
+	m.ADCMeanPerChannel[channel], m.ADCRMSPerChannel[channel] =
 		UpdateMeanRMS(
-			m10s.ADCMeanPerChannel[channel],
-			m10s.ADCRMSPerChannel[channel],
-			m10s.NPacketsPerChannel[channel],
+			m.ADCMeanPerChannel[channel],
+			m.ADCRMSPerChannel[channel],
+			m.NPacketsPerChannel[channel],
 			adc,
 		)
-	m10s.NPacketsPerChannel[channel]++
+	m.NPacketsPerChannel[channel]++
 
 }
 
-func (m10s *Monitor10s) UpdateTopHotChannels() {
-	ioGroup := m10s.IoGroup
+func (m *SlowMonitor) UpdateTopHotChannels() {
+	ioGroup := m.IoGroup
 
 	// A channel is reported if any packet was recorded for it
 	totals := make([]uint, NUM_CHANNELS)
-	for i, counts := range m10s.DataStatusCountsPerChannel[:] {
+	for i, counts := range m.DataStatusCountsPerChannel[:] {
 		totals[i] = counts.Total
 	}
 	hasStatuses := func(i int) bool {
 		return AnyStatuses(
-			m10s.DataStatusCountsPerChannel[i],
-			m10s.ConfigStatusCountsPerChannel[i],
-			m10s.OtherStatusCountsPerChannel[i],
+			m.DataStatusCountsPerChannel[i],
+			m.ConfigStatusCountsPerChannel[i],
+			m.OtherStatusCountsPerChannel[i],
 		)
 	}
-	hasADC := func(i int) bool { return m10s.NPacketsPerChannel[i] > 0 }
+	hasADC := func(i int) bool { return m.NPacketsPerChannel[i] > 0 }
 
-	m10s.TopHotChannels, m10s.TopHotValues = sortByValue(
+	m.TopHotChannels, m.TopHotValues = sortByValue(
 		totals, hasStatuses, 100, false, ioGroup, ChannelKeyAt,
 	)
-	m10s.BottomColdChannels, m10s.BottomColdValues = sortByValue(
+	m.BottomColdChannels, m.BottomColdValues = sortByValue(
 		totals, hasStatuses, 100, true, ioGroup, ChannelKeyAt,
 	)
-	m10s.TopADCMeanChannels, m10s.TopADCMeanValues = sortByValue(
-		m10s.ADCMeanPerChannel[:], hasADC, 100, false, ioGroup, ChannelKeyAt,
+	m.TopADCMeanChannels, m.TopADCMeanValues = sortByValue(
+		m.ADCMeanPerChannel[:], hasADC, 100, false, ioGroup, ChannelKeyAt,
 	)
-	m10s.TopADCRMSChannels, m10s.TopADCRMSValues = sortByValue(
-		m10s.ADCRMSPerChannel[:], hasADC, 100, false, ioGroup, ChannelKeyAt,
+	m.TopADCRMSChannels, m.TopADCRMSValues = sortByValue(
+		m.ADCRMSPerChannel[:], hasADC, 100, false, ioGroup, ChannelKeyAt,
 	)
 }
 
-func (m10s *Monitor10s) UpdateTopChips() {
-	ioGroup := m10s.IoGroup
-	invalidParity := m10s.InvalidParityPerChip[:]
-	sharedFifoFull := m10s.SharedFifoFullPerChip[:]
+func (m *SlowMonitor) UpdateTopChips() {
+	ioGroup := m.IoGroup
+	invalidParity := m.InvalidParityPerChip[:]
+	sharedFifoFull := m.SharedFifoFullPerChip[:]
 
-	m10s.TopInvalidParityChips, m10s.TopInvalidParityCounts = sortByValue(
+	m.TopInvalidParityChips, m.TopInvalidParityCounts = sortByValue(
 		invalidParity,
 		func(i int) bool { return invalidParity[i] > 0 },
 		100,
@@ -192,7 +192,7 @@ func (m10s *Monitor10s) UpdateTopChips() {
 		ioGroup,
 		ChipKeyAt,
 	)
-	m10s.TopSharedFifoFullChips, m10s.TopSharedFifoFullCounts = sortByValue(
+	m.TopSharedFifoFullChips, m.TopSharedFifoFullCounts = sortByValue(
 		sharedFifoFull,
 		func(i int) bool { return sharedFifoFull[i] > 0 },
 		100,
@@ -202,205 +202,205 @@ func (m10s *Monitor10s) UpdateTopChips() {
 	)
 }
 
-func (m10s *Monitor10s) WriteToInflux(
+func (m *SlowMonitor) WriteToInflux(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
 
 	// point := makePoint("packet_adc_total", timeNow)
-	// point.AddField("adc_mean", m10s.ADCMeanTotal)
-	// point.AddField("adc_rms", m10s.ADCRMSTotal)
-	// point.AddField("n_packets", m10s.NPacketsTotal)
+	// point.AddField("adc_mean", m.ADCMeanTotal)
+	// point.AddField("adc_rms", m.ADCRMSTotal)
+	// point.AddField("n_packets", m.NPacketsTotal)
 	// writeAPI.WritePoint(point)
 
-	// m10s.writePacketAdcPerChannel(writeAPI, timeNow)
-	m10s.writePacketAdcPerChip(writeAPI, timeNow)
-	// m10s.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
-	// m10s.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
-	// m10s.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
-	m10s.writeTopDataRateChannels(writeAPI, timeNow, timeDiff)
-	m10s.writeBottomDataRateChannels(writeAPI, timeNow, timeDiff)
-	m10s.writeTopAdcMeanChannels(writeAPI, timeNow)
-	m10s.writeTopAdcRmsChannels(writeAPI, timeNow)
-	m10s.writeTopInvalidParityChips(writeAPI, timeNow, timeDiff)
-	m10s.writeTopSharedFifoFullChips(writeAPI, timeNow, timeDiff)
+	// m.writePacketAdcPerChannel(writeAPI, timeNow)
+	m.writePacketAdcPerChip(writeAPI, timeNow)
+	// m.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	// m.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	// m.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	m.writeTopDataRateChannels(writeAPI, timeNow, timeDiff)
+	m.writeBottomDataRateChannels(writeAPI, timeNow, timeDiff)
+	m.writeTopAdcMeanChannels(writeAPI, timeNow)
+	m.writeTopAdcRmsChannels(writeAPI, timeNow)
+	m.writeTopInvalidParityChips(writeAPI, timeNow, timeDiff)
+	m.writeTopSharedFifoFullChips(writeAPI, timeNow, timeDiff)
 
 	writeAPI.Flush()
 
 }
 
-func (m10s *Monitor10s) writePacketAdcPerChannel(
+func (m *SlowMonitor) writePacketAdcPerChannel(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 ) {
-	for channel, adc := range m10s.ADCMeanPerChannel[:] {
-		if m10s.NPacketsPerChannel[channel] == 0 {
+	for channel, adc := range m.ADCMeanPerChannel[:] {
+		if m.NPacketsPerChannel[channel] == 0 {
 			continue
 		}
 		point := makePoint("packet_adc_per_channel", timeNow)
-		addChannelTags(point, ChannelKeyAt(m10s.IoGroup, channel))
+		addChannelTags(point, ChannelKeyAt(m.IoGroup, channel))
 		point.AddField("adc_mean", adc)
-		point.AddField("adc_rms", m10s.ADCRMSPerChannel[channel])
-		point.AddField("n_packets", m10s.NPacketsPerChannel[channel])
+		point.AddField("adc_rms", m.ADCRMSPerChannel[channel])
+		point.AddField("n_packets", m.NPacketsPerChannel[channel])
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writePacketAdcPerChip(
+func (m *SlowMonitor) writePacketAdcPerChip(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 ) {
-	for chip, adc := range m10s.ADCMeanPerChip[:] {
-		if m10s.NPacketsPerChip[chip] == 0 {
+	for chip, adc := range m.ADCMeanPerChip[:] {
+		if m.NPacketsPerChip[chip] == 0 {
 			continue
 		}
 		point := makePoint("packet_adc_per_chip", timeNow)
-		addChipTags(point, ChipKeyAt(m10s.IoGroup, chip))
+		addChipTags(point, ChipKeyAt(m.IoGroup, chip))
 		point.AddField("adc_mean", adc)
-		point.AddField("adc_rms", m10s.ADCRMSPerChip[chip])
-		// point.AddField("n_packets", m10s.NPacketsPerChip[chip])
+		point.AddField("adc_rms", m.ADCRMSPerChip[chip])
+		// point.AddField("n_packets", m.NPacketsPerChip[chip])
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeDataStatusesRatesPerChannel(
+func (m *SlowMonitor) writeDataStatusesRatesPerChannel(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for channel, counts := range m10s.DataStatusCountsPerChannel[:] {
+	for channel, counts := range m.DataStatusCountsPerChannel[:] {
 		if !AnyStatuses(
-			m10s.DataStatusCountsPerChannel[channel],
-			m10s.ConfigStatusCountsPerChannel[channel],
-			m10s.OtherStatusCountsPerChannel[channel],
+			m.DataStatusCountsPerChannel[channel],
+			m.ConfigStatusCountsPerChannel[channel],
+			m.OtherStatusCountsPerChannel[channel],
 		) {
 			continue
 		}
 		point := makePoint("data_statuses_rates_per_channel", timeNow)
-		addChannelTags(point, ChannelKeyAt(m10s.IoGroup, channel))
+		addChannelTags(point, ChannelKeyAt(m.IoGroup, channel))
 		addDataStatusFields(point, counts, timeDiff)
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeConfigStatusesRatesPerChannel(
+func (m *SlowMonitor) writeConfigStatusesRatesPerChannel(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for channel, counts := range m10s.ConfigStatusCountsPerChannel[:] {
+	for channel, counts := range m.ConfigStatusCountsPerChannel[:] {
 		if !AnyStatuses(
-			m10s.DataStatusCountsPerChannel[channel],
-			m10s.ConfigStatusCountsPerChannel[channel],
-			m10s.OtherStatusCountsPerChannel[channel],
+			m.DataStatusCountsPerChannel[channel],
+			m.ConfigStatusCountsPerChannel[channel],
+			m.OtherStatusCountsPerChannel[channel],
 		) {
 			continue
 		}
 		point := makePoint("config_statuses_rates_per_channel", timeNow)
-		addChannelTags(point, ChannelKeyAt(m10s.IoGroup, channel))
+		addChannelTags(point, ChannelKeyAt(m.IoGroup, channel))
 		addConfigStatusFields(point, counts, timeDiff)
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeOtherStatusesRatesPerChannel(
+func (m *SlowMonitor) writeOtherStatusesRatesPerChannel(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for channel, counts := range m10s.OtherStatusCountsPerChannel[:] {
+	for channel, counts := range m.OtherStatusCountsPerChannel[:] {
 		if !AnyStatuses(
-			m10s.DataStatusCountsPerChannel[channel],
-			m10s.ConfigStatusCountsPerChannel[channel],
-			m10s.OtherStatusCountsPerChannel[channel],
+			m.DataStatusCountsPerChannel[channel],
+			m.ConfigStatusCountsPerChannel[channel],
+			m.OtherStatusCountsPerChannel[channel],
 		) {
 			continue
 		}
 		point := makePoint("other_statuses_rates_per_channel", timeNow)
-		addChannelTags(point, ChannelKeyAt(m10s.IoGroup, channel))
+		addChannelTags(point, ChannelKeyAt(m.IoGroup, channel))
 		point.AddField("total", float64(counts)/timeDiff)
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeTopDataRateChannels(
+func (m *SlowMonitor) writeTopDataRateChannels(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for i, channel := range m10s.TopHotChannels {
+	for i, channel := range m.TopHotChannels {
 		point := makePoint("top_data_rate_channels", timeNow)
 		addChannelTags(point, channel)
-		point.AddField("rate", float64(m10s.TopHotValues[i])/timeDiff)
+		point.AddField("rate", float64(m.TopHotValues[i])/timeDiff)
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeBottomDataRateChannels(
+func (m *SlowMonitor) writeBottomDataRateChannels(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for i, channel := range m10s.BottomColdChannels {
+	for i, channel := range m.BottomColdChannels {
 		point := makePoint("bottom_data_rate_channels", timeNow)
 		addChannelTags(point, channel)
-		point.AddField("rate", float64(m10s.BottomColdValues[i])/timeDiff)
+		point.AddField("rate", float64(m.BottomColdValues[i])/timeDiff)
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeTopAdcMeanChannels(
+func (m *SlowMonitor) writeTopAdcMeanChannels(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 ) {
-	for i, channel := range m10s.TopADCMeanChannels {
+	for i, channel := range m.TopADCMeanChannels {
 		point := makePoint("top_adc_mean_channels", timeNow)
 		addChannelTags(point, channel)
-		point.AddField("adc_mean", float64(m10s.TopADCMeanValues[i]))
+		point.AddField("adc_mean", float64(m.TopADCMeanValues[i]))
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeTopAdcRmsChannels(
+func (m *SlowMonitor) writeTopAdcRmsChannels(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 ) {
-	for i, channel := range m10s.TopADCRMSChannels {
+	for i, channel := range m.TopADCRMSChannels {
 		point := makePoint("top_adc_rms_channels", timeNow)
 		addChannelTags(point, channel)
-		point.AddField("adc_rms", float64(m10s.TopADCRMSValues[i]))
+		point.AddField("adc_rms", float64(m.TopADCRMSValues[i]))
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeTopInvalidParityChips(
+func (m *SlowMonitor) writeTopInvalidParityChips(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for i, chip := range m10s.TopInvalidParityChips {
+	for i, chip := range m.TopInvalidParityChips {
 		point := makePoint("top_invalid_parity_chips", timeNow)
 		addChipTags(point, chip)
 		point.AddField(
 			"total",
-			float64(m10s.TopInvalidParityCounts[i])/timeDiff,
+			float64(m.TopInvalidParityCounts[i])/timeDiff,
 		)
 		writeAPI.WritePoint(point)
 	}
 }
 
-func (m10s *Monitor10s) writeTopSharedFifoFullChips(
+func (m *SlowMonitor) writeTopSharedFifoFullChips(
 	writeAPI api.WriteAPI,
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-	for i, chip := range m10s.TopSharedFifoFullChips {
+	for i, chip := range m.TopSharedFifoFullChips {
 		point := makePoint("top_shared_fifo_full_chips", timeNow)
 		addChipTags(point, chip)
 		point.AddField(
 			"total",
-			float64(m10s.TopSharedFifoFullCounts[i])/timeDiff,
+			float64(m.TopSharedFifoFullCounts[i])/timeDiff,
 		)
 		writeAPI.WritePoint(point)
 	}

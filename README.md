@@ -69,18 +69,18 @@ option `--pacman-config` (instead of `--pacman-url` and `--pacman-iog`):
 ## Existing metrics
 
 Currently `pacmon` writes the same set of metrics displayed by Kevin's original
-`pacmon.py`. See `monitor.go` for how they're calculated.
+`pacmon.py`. See `monitors/monitor_fast.go` for how they're calculated.
 
 ## Adding metrics
 
-In `monitor.go`, first add the necessary data fields (e.g. `NoiseRate`) to the
-`Monitor` structure. If you're adding something that requires initialization,
-such as a `map`, then also edit the `NewMonitor` function.
+In `monitors/monitor_fast.go`, first add the necessary data fields (e.g. `NoiseRate`) to the
+`FastMonitor` structure. If you're adding something that requires initialization,
+such as a `map`, then also edit the `NewFastMonitor` function.
 
 Then add a function like
 
 ``` go
-func (m *Monitor) RecordNoiseRate(word Word) {
+func (m *FastMonitor) RecordNoiseRate(word Word) {
     // do stuff and finally set m.NoiseRate
 }
 ```

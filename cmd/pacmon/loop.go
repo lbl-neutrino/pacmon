@@ -25,8 +25,8 @@ func loop(
 
 	defer wg.Done()
 
-	monitor := monitors.NewMonitor(ioGroup)
-	monitor10s := monitors.NewMonitor10s(ioGroup)
+	fastMonitor := monitors.NewFastMonitor(ioGroup)
+	slowMonitor := monitors.NewSlowMonitor(ioGroup)
 	// monitorPlots := monitors.NewMonitorPlots(ioGroup)
 	disabledListMonitor := monitors.NewDisabledListMonitor(ioGroup)
 	syncMonitor := monitors.NewSyncMonitor()
@@ -40,12 +40,12 @@ func loop(
 	socket.Connect(singlePacmanURL)
 
 	writeAPI := client.WriteAPI(flags.InfluxOrg, flags.InfluxBucket)
-	now := time.Now()
-	last := time.Now()
-	now10s := time.Now()
+	nowFast := time.Now()
+	lastFast := time.Now()
+	nowSlow := time.Now()
 	// nowPlots := time.Now()
 	// nowDisabledList := time.Now()
-	last10s := time.Now()
+	lastSlow := time.Now()
 	// lastPlots := time.Now()
 	// lastDisabledList := time.Now()
 
@@ -66,8 +66,8 @@ func loop(
 		msgTime := int64(msg.Header.Timestamp)
 
 		for _, word := range msg.Words {
-			monitor.ProcessWord(word)
-			monitor10s.ProcessWord(word)
+			fastMonitor.ProcessWord(word)
+			slowMonitor.ProcessWord(word)
 			// monitorPlots.ProcessWord(word)
 			disabledListMonitor.ProcessWord(word)
 
@@ -89,28 +89,28 @@ func loop(
 			trigMonitor = monitors.NewTrigMonitor()
 		}
 
-		if time.Since(last).Seconds() > 60 {
-			now = time.Now()
-			monitor.WriteToInflux(
+		if time.Since(lastFast).Seconds() > 60 {
+			nowFast = time.Now()
+			fastMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
-				now.Sub(last).Seconds(),
+				nowFast.Sub(lastFast).Seconds(),
 			)
-			monitor = monitors.NewMonitor(ioGroup) // Reset monitor
-			last = now
+			fastMonitor = monitors.NewFastMonitor(ioGroup) // Reset monitor
+			lastFast = nowFast
 		}
 
-		if time.Since(last10s).Seconds() > 300 {
-			now10s = time.Now()
-			monitor10s.UpdateTopHotChannels() // Only sort once
-			monitor10s.UpdateTopChips()
-			monitor10s.WriteToInflux(
+		if time.Since(lastSlow).Seconds() > 300 {
+			nowSlow = time.Now()
+			slowMonitor.UpdateTopHotChannels() // Only sort once
+			slowMonitor.UpdateTopChips()
+			slowMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
-				now10s.Sub(last10s).Seconds(),
+				nowSlow.Sub(lastSlow).Seconds(),
 			)
-			monitor10s = monitors.NewMonitor10s(ioGroup) // Reset monitor
-			last10s = now10s
+			slowMonitor = monitors.NewSlowMonitor(ioGroup) // Reset monitor
+			lastSlow = nowSlow
 		}
 
 		// if time.Since(lastPlots).Seconds() > plotNorms.Freq {

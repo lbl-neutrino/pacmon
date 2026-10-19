@@ -73,29 +73,7 @@ func broadcastFlag(vals []string, n int, name string) []string {
 	return nil
 }
 
-func run(cmd *cobra.Command, args []string) {
-	if flags.Profile {
-		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
-		go func() {
-			log.Println(http.ListenAndServe(":6363", nil))
-		}()
-	}
-
-	token := os.Getenv("INFLUXDB_TOKEN")
-	if token == "" {
-		fmt.Fprintf(os.Stderr,
-			"Please set the INFLUXDB_TOKEN environment variable\n")
-		os.Exit(1)
-	}
-
-	client := influxdb2.NewClientWithOptions(
-		flags.InfluxURL,
-		token,
-		influxdb2.DefaultOptions().SetPrecision(time.Millisecond),
-	)
-
-	var wg sync.WaitGroup
-
+func readPacmanIoJson() {
 	content, err := os.ReadFile(flags.PacmanIoJson)
 	if err == nil {
 		fmt.Println(
@@ -139,10 +117,39 @@ func run(cmd *cobra.Command, args []string) {
 		fmt.Println("Error when opening configuration file: ", err)
 		fmt.Println("Using --pacman-url and --pacman-iog options")
 	}
+}
+
+func run(cmd *cobra.Command, args []string) {
+	if flags.Profile {
+		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+		go func() {
+			log.Println(http.ListenAndServe(":6363", nil))
+		}()
+	}
+
+	token := os.Getenv("INFLUXDB_TOKEN")
+	if token == "" {
+		fmt.Fprintf(os.Stderr,
+			"Please set the INFLUXDB_TOKEN environment variable\n")
+		os.Exit(1)
+	}
+
+	client := influxdb2.NewClientWithOptions(
+		flags.InfluxURL,
+		token,
+		influxdb2.DefaultOptions().SetPrecision(time.Millisecond),
+	)
+
+	var wg sync.WaitGroup
+
+	if flags.PacmanIoJson != "" {
+		readPacmanIoJson()
+	}
 
 	if len(flags.PacmanURL) == 0 {
 		log.Fatal("No PACMAN URLs given (use --pacman-url or --pacman-config)")
 	}
+
 	flags.PacmanURL = broadcastFlag(flags.PacmanURL, len(flags.PacmanIog), "--pacman-url")
 	flags.PacmanGeom = broadcastFlag(flags.PacmanGeom, len(flags.PacmanIog), "--pacman-geom")
 

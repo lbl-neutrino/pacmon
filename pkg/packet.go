@@ -9,8 +9,8 @@ type Packet [8]byte
 type PacketType uint8
 
 const (
-	PacketTypeData  PacketType = 0
-	PacketTypeError PacketType = 1
+	PacketTypeData  PacketType = 1
+	PacketTypeError PacketType = 0
 	PacketTypeWrite PacketType = 2
 	PacketTypeRead  PacketType = 3
 )
@@ -46,34 +46,35 @@ func (p Packet) Timestamp() uint32 {
 	return uint32(p[2]) |
 		(uint32(p[3]) << 8) |
 		(uint32(p[4]) << 16) |
-		(uint32((p[5] & 0x7F)) << 24)
+		(uint32((p[5] & 0x0F)) << 24)
 }
 
 func (p *Packet) SetTimestamp(timestamp uint32) {
 	p[2] = byte(timestamp & 0xFF)
 	p[3] = byte((timestamp >> 8) & 0xFF)
 	p[4] = byte((timestamp >> 16) & 0xFF)
-	p[5] = (p[5] & 0x80) | byte((timestamp>>24)&0x7F)
+	p[5] = (p[5] & 0xF0) | byte((timestamp>>24)&0x0F)
 }
 
-func (p Packet) First() bool {
-	return p[5]>>7 == 1
+// func (p Packet) First() bool {
+// 	return p[5]>>7 == 1
+// }
+
+// func (p *Packet) SetFirst(first bool) {
+// 	if first {
+// 		p[5] = (p[5] & 0x7F) | 0x70
+// 	} else {
+// 		p[5] = p[5] & 0x7F
+// 	}
+// }
+
+func (p Packet) Data() uint16 {
+	return (uint16(p[6]) << 2) | (uint16(p[5]) >> 6)
 }
 
-func (p *Packet) SetFirst(first bool) {
-	if first {
-		p[5] = (p[5] & 0x7F) | 0x70
-	} else {
-		p[5] = p[5] & 0x7F
-	}
-}
-
-func (p Packet) Data() uint8 {
-	return p[6]
-}
-
-func (p *Packet) SetData(data uint8) {
-	p[6] = data
+func (p *Packet) SetData(data uint16) {
+	p[5] |= byte(data & 2) << 6
+	p[6] = byte(data >> 8)
 }
 
 func (p Packet) TrigType() uint8 {

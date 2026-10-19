@@ -75,7 +75,7 @@ func loop(
 			trigMonitor.ProcessWord(word, ioGroup)
 		}
 
-		if len(syncMonitor.Time) > 0 {
+		if len(syncMonitor.Time) > 60 {
 			syncMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
@@ -83,9 +83,9 @@ func loop(
 			syncMonitor = monitors.NewSyncMonitor()
 		}
 
-		if len(trigMonitor.Time) > 0 {
-			// trigMonitor.WriteToInflux(writeAPI,
-			// 	time.Unix(msgTime, 0))
+		if len(trigMonitor.Time) > 60 {
+			trigMonitor.WriteToInflux(writeAPI,
+				time.Unix(msgTime, 0))
 			trigMonitor = monitors.NewTrigMonitor()
 		}
 

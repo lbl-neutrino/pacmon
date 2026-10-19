@@ -43,15 +43,11 @@ type DLOptions struct {
 type Flags struct {
 	PacmanURL           []string
 	PacmanIog           []string
+	PacmanGeom          []string
 	PacmanIoJson        string
 	InfluxURL           string
 	InfluxOrg           string
 	InfluxBucket        string
-	GeometryFileMod0    string
-	GeometryFileMod1    string
-	GeometryFileMod2    string
-	GeometryFileMod3    string
-	UseSingleCube       bool
 	PlotNorms           Norms
 	DisabledListOptions DLOptions
 	Profile             bool
@@ -191,6 +187,23 @@ func runSingle(
 	}
 }
 
+// A per-PACMAN flag may be given either once per IO group or as a single value
+// that applies to every IO group. An empty flag is returned as-is.
+func broadcastFlag(vals []string, n int, name string) []string {
+	if len(vals) == 0 || len(vals) == n {
+		return vals
+	}
+	if len(vals) == 1 {
+		result := make([]string, n)
+		for i := range result {
+			result[i] = vals[0]
+		}
+		return result
+	}
+	log.Fatalf("%s has %d values but there are %d IO groups", name, len(vals), n)
+	return nil
+}
+
 func run(cmd *cobra.Command, args []string) {
 	if flags.Profile {
 		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
@@ -258,27 +271,23 @@ func run(cmd *cobra.Command, args []string) {
 		fmt.Println("Using --pacman-url and --pacman-iog options")
 	}
 
-	geometryMod0 := LoadGeometry(flags.GeometryFileMod0)
-	geometryMod1 := LoadGeometry(flags.GeometryFileMod1)
-	geometryMod2 := LoadGeometry(flags.GeometryFileMod2)
-	geometryMod3 := LoadGeometry(flags.GeometryFileMod3)
-
-	if flags.UseSingleCube {
-		geometryMod0 = LoadGeometry("layout/geometry_singlecube.json")
+	if len(flags.PacmanURL) == 0 {
+		log.Fatal("No PACMAN URLs given (use --pacman-url or --pacman-config)")
 	}
+	flags.PacmanURL = broadcastFlag(flags.PacmanURL, len(flags.PacmanIog), "--pacman-url")
+	flags.PacmanGeom = broadcastFlag(flags.PacmanGeom, len(flags.PacmanIog), "--pacman-geom")
 
-	// A single --pacman-url applies to every IO group
-	if len(flags.PacmanURL) == 1 && len(flags.PacmanIog) > 1 {
-		url := flags.PacmanURL[0]
-		flags.PacmanURL = make([]string, len(flags.PacmanIog))
-		for i := range flags.PacmanURL {
-			flags.PacmanURL[i] = url
+	// Load each distinct geometry file only once
+	geometries := make(map[string]Geometry)
+	for _, path := range flags.PacmanGeom {
+		if _, ok := geometries[path]; !ok {
+			geometries[path] = LoadGeometry(path)
 		}
 	}
 
-	wg.Add(len(flags.PacmanURL))
+	wg.Add(len(flags.PacmanIog))
 
-	for iPacman := 0; iPacman < len(flags.PacmanURL); iPacman++ {
+	for iPacman := 0; iPacman < len(flags.PacmanIog); iPacman++ {
 
 		ioGroup, err := strconv.ParseUint(
 			flags.PacmanIog[iPacman],
@@ -288,49 +297,21 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			panic(err)
 		}
-		if ioGroup == 1 || ioGroup == 2 { // Module 0
-			go runSingle(
-				flags.PacmanURL[iPacman],
-				uint8(ioGroup),
-				geometryMod0,
-				flags.PlotNorms,
-				flags.DisabledListOptions,
-				client,
-				&wg,
-			)
-		} else if ioGroup == 3 || ioGroup == 4 { // Module 1
-			go runSingle(
-				flags.PacmanURL[iPacman],
-				uint8(ioGroup),
-				geometryMod1,
-				flags.PlotNorms,
-				flags.DisabledListOptions,
-				client,
-				&wg,
-			)
-		} else if ioGroup == 5 || ioGroup == 6 { // Module 2
-			go runSingle(
-				flags.PacmanURL[iPacman],
-				uint8(ioGroup),
-				geometryMod2,
-				flags.PlotNorms,
-				flags.DisabledListOptions,
-				client,
-				&wg,
-			)
-		} else if ioGroup == 7 || ioGroup == 8 { // Module 3
-			go runSingle(
-				flags.PacmanURL[iPacman],
-				uint8(ioGroup),
-				geometryMod3,
-				flags.PlotNorms,
-				flags.DisabledListOptions,
-				client,
-				&wg,
-			)
-		} else { // Shouldn't get here
-			fmt.Println("io_group not between 1 and 8.")
+
+		var geometry Geometry
+		if flags.PacmanGeom != nil {
+			geometry = geometries[flags.PacmanGeom[iPacman]]
 		}
+
+		go runSingle(
+			flags.PacmanURL[iPacman],
+			uint8(ioGroup),
+			geometry,
+			flags.PlotNorms,
+			flags.DisabledListOptions,
+			client,
+			&wg,
+		)
 	}
 
 	wg.Wait()
@@ -344,6 +325,10 @@ func main() {
 	cmd.PersistentFlags().
 		StringSliceVar(&flags.PacmanIog, "pacman-iog", nil,
 			"Comma-separated list of corresponding IO groups")
+	cmd.PersistentFlags().
+		StringSliceVar(&flags.PacmanGeom, "pacman-geom", nil,
+			"Comma-separated list of corresponding geometry JSON files "+
+				"(a single file applies to every IO group)")
 	cmd.PersistentFlags().
 		StringVar(&flags.InfluxURL, "influx-url",
 			"http://localhost:18086",
@@ -359,26 +344,6 @@ func main() {
 			"JSON configuration file of the IO instead of "+
 				"--pacman-url and --pacman-iog")
 	cmd.PersistentFlags().
-		StringVar(&flags.GeometryFileMod0, "geometry-mod0",
-			"layout/geometry_mod0_v4.json",
-			"JSON file with the layout of "+
-				"Module 0 (io_group = 1,2)")
-	cmd.PersistentFlags().
-		StringVar(&flags.GeometryFileMod2, "geometry-mod2",
-			"layout/geometry_mod2_v4.json",
-			"JSON file with the layout of "+
-				"Module 2 (io_group = 5,6)")
-	cmd.PersistentFlags().
-		StringVar(&flags.GeometryFileMod1, "geometry-mod1",
-			"layout/geometry_mod1_v4.json",
-			"JSON file with the layout of "+
-				"Module 1 (io_group = 3,4)")
-	cmd.PersistentFlags().
-		StringVar(&flags.GeometryFileMod3, "geometry-mod3",
-			"layout/geometry_mod3_v4.json",
-			"JSON file with the layout of "+
-				"Module 3 (io_group =  7,8)")
-	cmd.PersistentFlags().
 		Float64VarP(&flags.PlotNorms.Freq, "plot-freq", "f", 30.,
 			"Frequency of updating plots in seconds")
 	cmd.PersistentFlags().
@@ -390,9 +355,6 @@ func main() {
 	cmd.PersistentFlags().
 		Float64VarP(&flags.PlotNorms.Rate, "norm-rate", "r", 10.,
 			"Norm for the rate plots")
-	cmd.PersistentFlags().
-		BoolVarP(&flags.UseSingleCube, "single-cube", "c", false,
-			"Use single-cube geometry")
 	cmd.PersistentFlags().
 		Float64VarP(&flags.DisabledListOptions.Freq,
 			"disable-list-freq", "d", 60.,

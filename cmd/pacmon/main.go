@@ -128,8 +128,7 @@ func runSingle(
 		}
 
 		if len(syncMonitor.Time) > 0 {
-			writeSyncMonitorToInflux(
-				syncMonitor,
+			syncMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 			)
@@ -137,15 +136,14 @@ func runSingle(
 		}
 
 		if len(trigMonitor.Time) > 0 {
-			// writeTrigMonitorToInflux(trigMonitor, writeAPI,
+			// trigMonitor.WriteToInflux(writeAPI,
 			// 	time.Unix(msgTime, 0))
 			trigMonitor = monitors.NewTrigMonitor()
 		}
 
 		if time.Since(last).Seconds() > 60 {
 			now = time.Now()
-			writeMonitorToInflux(
-				monitor,
+			monitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 				now.Sub(last).Seconds(),
@@ -158,8 +156,7 @@ func runSingle(
 			now10s = time.Now()
 			monitor10s.UpdateTopHotChannels() // Only sort once
 			monitor10s.UpdateTopChips()
-			writeMonitor10sToInflux(
-				monitor10s,
+			monitor10s.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 				now10s.Sub(last10s).Seconds(),

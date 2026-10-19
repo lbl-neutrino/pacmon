@@ -1,6 +1,10 @@
 package monitors
 
 import (
+	"time"
+
+	api "github.com/influxdata/influxdb-client-go/v2/api"
+
 	. "larpix/pacmon/pkg"
 )
 
@@ -103,5 +107,207 @@ func (m *Monitor) RecordFifoFlags(word Word) {
 		fifoFlagCounts.SharedFifoMoreHalfFull++
 	case FifoFull1, FifoFull2:
 		fifoFlagCounts.SharedFifoFull++
+	}
+}
+
+func (m *Monitor) WriteToInflux(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+
+	// point := makePoint("word_types_rates", timeNow)
+	// for wordtype, count := range m.WordTypeCounts[:] {
+	// 	point.AddField(WordType(wordtype).String(), float64(count)/timeDiff)
+	// }
+	// writeAPI.WritePoint(point)
+
+	m.writeDataStatusesRates(writeAPI, timeNow, timeDiff)
+	m.writeConfigStatusesRates(writeAPI, timeNow, timeDiff)
+	// m.writeOtherStatusesRates(writeAPI, timeNow, timeDiff)
+	m.writeDataStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
+	m.writeConfigStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
+	// m.writeOtherStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
+	// m.writeLocalFifoStatuses(writeAPI, timeNow)
+	// m.writeSharedFifoStatuses(writeAPI, timeNow)
+
+	writeAPI.Flush()
+
+}
+
+func (m *Monitor) writeDataStatusesRates(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for ioChannel, counts := range m.DataStatusCounts[:] {
+		if !AnyStatuses(
+			m.DataStatusCounts[ioChannel],
+			m.ConfigStatusCounts[ioChannel],
+			m.OtherStatusCounts[ioChannel],
+		) {
+			continue
+		}
+		point := makePoint("data_statuses_rates", timeNow)
+		addIoChannelTags(point, IoChannelKeyAt(m.IoGroup, ioChannel))
+		addDataStatusFields(point, counts, timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeConfigStatusesRates(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for ioChannel, counts := range m.ConfigStatusCounts[:] {
+		if !AnyStatuses(
+			m.DataStatusCounts[ioChannel],
+			m.ConfigStatusCounts[ioChannel],
+			m.OtherStatusCounts[ioChannel],
+		) {
+			continue
+		}
+		point := makePoint("config_statuses_rates", timeNow)
+		addIoChannelTags(point, IoChannelKeyAt(m.IoGroup, ioChannel))
+		addConfigStatusFields(point, counts, timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeOtherStatusesRates(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for ioChannel, counts := range m.OtherStatusCounts[:] {
+		if !AnyStatuses(
+			m.DataStatusCounts[ioChannel],
+			m.ConfigStatusCounts[ioChannel],
+			m.OtherStatusCounts[ioChannel],
+		) {
+			continue
+		}
+		point := makePoint("other_statuses_rates", timeNow)
+		addIoChannelTags(point, IoChannelKeyAt(m.IoGroup, ioChannel))
+		point.AddField("total", float64(counts)/timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeDataStatusesRatesPerChip(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for chip, counts := range m.DataStatusCountsPerChip[:] {
+		if !AnyStatuses(
+			m.DataStatusCountsPerChip[chip],
+			m.ConfigStatusCountsPerChip[chip],
+			m.OtherStatusCountsPerChip[chip],
+		) {
+			continue
+		}
+		point := makePoint("data_statuses_rates_per_chip", timeNow)
+		addChipTags(point, ChipKeyAt(m.IoGroup, chip))
+		addDataStatusFields(point, counts, timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeConfigStatusesRatesPerChip(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for chip, counts := range m.ConfigStatusCountsPerChip[:] {
+		if !AnyStatuses(
+			m.DataStatusCountsPerChip[chip],
+			m.ConfigStatusCountsPerChip[chip],
+			m.OtherStatusCountsPerChip[chip],
+		) {
+			continue
+		}
+		point := makePoint("config_statuses_rates_per_chip", timeNow)
+		addChipTags(point, ChipKeyAt(m.IoGroup, chip))
+		addConfigStatusFields(point, counts, timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeOtherStatusesRatesPerChip(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+	timeDiff float64,
+) {
+	for chip, counts := range m.OtherStatusCountsPerChip[:] {
+		if !AnyStatuses(
+			m.DataStatusCountsPerChip[chip],
+			m.ConfigStatusCountsPerChip[chip],
+			m.OtherStatusCountsPerChip[chip],
+		) {
+			continue
+		}
+		point := makePoint("other_statuses_rates_per_chip", timeNow)
+		addChipTags(point, ChipKeyAt(m.IoGroup, chip))
+		point.AddField("total", float64(counts)/timeDiff)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeLocalFifoStatuses(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+) {
+	for channel, counts := range m.FifoFlagCounts[:] {
+		total := float64(
+			counts.LocalFifoLessHalfFull +
+				counts.LocalFifoMoreHalfFull +
+				counts.LocalFifoFull,
+		)
+		if total == 0 {
+			continue
+		}
+
+		point := makePoint("local_fifo_statuses", timeNow)
+		addChannelTags(point, ChannelKeyAt(m.IoGroup, channel))
+		addFifoFields(
+			point,
+			counts.LocalFifoLessHalfFull,
+			counts.LocalFifoMoreHalfFull,
+			counts.LocalFifoFull,
+			total,
+		)
+		writeAPI.WritePoint(point)
+	}
+}
+
+func (m *Monitor) writeSharedFifoStatuses(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+) {
+	for channel, counts := range m.FifoFlagCounts[:] {
+		total := float64(
+			counts.SharedFifoLessHalfFull +
+				counts.SharedFifoMoreHalfFull +
+				counts.SharedFifoFull,
+		)
+		if total == 0 {
+			continue
+		}
+
+		point := makePoint("shared_fifo_statuses", timeNow)
+		addChipTags(
+			point,
+			ChipKeyAt(m.IoGroup, channel/MAX_CHANNELS_PER_CHIP),
+		)
+		addFifoFields(
+			point,
+			counts.SharedFifoLessHalfFull,
+			counts.SharedFifoMoreHalfFull,
+			counts.SharedFifoFull,
+			total,
+		)
+		writeAPI.WritePoint(point)
 	}
 }

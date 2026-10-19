@@ -47,7 +47,7 @@ func writeDisabledList(
 		key := fmt.Sprintf(
 			"%d-%d-%d",
 			channel.IoGroup,
-			IoChannelToTileId(int(channel.IoChannel)),
+			monitors.IoChannelToTileId(int(channel.IoChannel)),
 			channel.ChipID,
 		)
 		data[key] = append(data[key], int(channel.ChannelID))

@@ -84,8 +84,8 @@ func loop(
 		}
 
 		if len(trigMonitor.Time) > 60 {
-			trigMonitor.WriteToInflux(writeAPI,
-				time.Unix(msgTime, 0))
+			// trigMonitor.WriteToInflux(writeAPI,
+			// 	time.Unix(msgTime, 0))
 			trigMonitor = monitors.NewTrigMonitor()
 		}
 

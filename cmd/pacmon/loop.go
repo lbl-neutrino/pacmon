@@ -80,7 +80,7 @@ func loop(
 		}
 
 		if len(syncMonitor.Time) > 60 {
-			syncMonitor.WriteToInflux(
+			go syncMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 			)
@@ -88,14 +88,14 @@ func loop(
 		}
 
 		if len(trigMonitor.Time) > 60 {
-			// trigMonitor.WriteToInflux(writeAPI,
+			// go trigMonitor.WriteToInflux(writeAPI,
 			// 	time.Unix(msgTime, 0))
 			trigMonitor = monitors.NewTrigMonitor()
 		}
 
 		if time.Since(lastFast).Seconds() > 1 {
 			nowFast = time.Now()
-			fastMonitor.WriteToInflux(
+			go fastMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 				nowFast.Sub(lastFast).Seconds(),
@@ -108,7 +108,7 @@ func loop(
 			nowSlow = time.Now()
 			slowMonitor.UpdateTopHotChannels() // Only sort once
 			slowMonitor.UpdateTopChips()
-			slowMonitor.WriteToInflux(
+			go slowMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 				nowSlow.Sub(lastSlow).Seconds(),
@@ -119,9 +119,7 @@ func loop(
 
 		if time.Since(lastChan).Seconds() > 600 {
 			nowChan = time.Now()
-			// Write a copy in the background so the loop isn't blocked
-			chanCopy := *chanMonitor // Deep copy (struct holds only arrays)
-			go chanCopy.WriteToInflux(
+			go chanMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 				nowChan.Sub(lastChan).Seconds(),

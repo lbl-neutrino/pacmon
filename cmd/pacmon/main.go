@@ -190,7 +190,7 @@ func run(cmd *cobra.Command, args []string) {
 		)
 	}
 
-	fmt.Println("Pacmon reporting for duty!")
+	fmt.Println("hi this is pacmon")
 
 	wg.Wait()
 }

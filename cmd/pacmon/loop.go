@@ -117,13 +117,13 @@ func loop(
 			lastSlow = nowSlow
 		}
 
-		if time.Since(lastChan).Seconds() > 600 {
+		if time.Since(lastChan).Seconds() > 300 {
 			nowChan = time.Now()
-			// go chanMonitor.WriteToInflux(
-			// 	writeAPI,
-			// 	time.Unix(msgTime, 0),
-			// 	nowChan.Sub(lastChan).Seconds(),
-			// )
+			go chanMonitor.WriteToInflux(
+				writeAPI,
+				time.Unix(msgTime, 0),
+				nowChan.Sub(lastChan).Seconds(),
+			)
 			chanMonitor = monitors.NewChanMonitor(ioGroup) // Reset monitor
 			lastChan = nowChan
 		}

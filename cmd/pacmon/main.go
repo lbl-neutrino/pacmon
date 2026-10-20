@@ -207,13 +207,13 @@ func main() {
 				"(a single file applies to every IO group)")
 	cmd.PersistentFlags().
 		StringVar(&flags.InfluxURL, "influx-url",
-			"http://localhost:18086",
+			"http://np04-srv-017:32700",
 			"InfluxDB URL")
 	cmd.PersistentFlags().
-		StringVar(&flags.InfluxOrg, "influx-org", "lbl-neutrino",
+		StringVar(&flags.InfluxOrg, "influx-org", "influxdata",
 			"InfluxDB organization")
 	cmd.PersistentFlags().
-		StringVar(&flags.InfluxBucket, "influx-bucket", "pacmon-test",
+		StringVar(&flags.InfluxBucket, "influx-bucket", "pacmon",
 			"InfluxDB bucket")
 	cmd.PersistentFlags().
 		StringVar(&flags.PacmanIoJson, "pacman-config", "",

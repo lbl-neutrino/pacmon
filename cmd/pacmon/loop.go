@@ -89,7 +89,7 @@ func loop(
 			trigMonitor = monitors.NewTrigMonitor()
 		}
 
-		if time.Since(lastFast).Seconds() > 60 {
+		if time.Since(lastFast).Seconds() > 1 {
 			nowFast = time.Now()
 			fastMonitor.WriteToInflux(
 				writeAPI,

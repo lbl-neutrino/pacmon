@@ -27,6 +27,7 @@ func loop(
 
 	fastMonitor := monitors.NewFastMonitor(ioGroup)
 	slowMonitor := monitors.NewSlowMonitor(ioGroup)
+	chanMonitor := monitors.NewChanMonitor(ioGroup)
 	// monitorPlots := monitors.NewMonitorPlots(ioGroup)
 	disabledListMonitor := monitors.NewDisabledListMonitor(ioGroup)
 	syncMonitor := monitors.NewSyncMonitor()
@@ -43,9 +44,11 @@ func loop(
 	nowFast := time.Now()
 	lastFast := time.Now()
 	nowSlow := time.Now()
+	lastSlow := time.Now()
+	nowChan := time.Now()
+	lastChan := time.Now()
 	// nowPlots := time.Now()
 	// nowDisabledList := time.Now()
-	lastSlow := time.Now()
 	// lastPlots := time.Now()
 	// lastDisabledList := time.Now()
 
@@ -68,6 +71,7 @@ func loop(
 		for _, word := range msg.Words {
 			fastMonitor.ProcessWord(word)
 			slowMonitor.ProcessWord(word)
+			chanMonitor.ProcessWord(word)
 			// monitorPlots.ProcessWord(word)
 			disabledListMonitor.ProcessWord(word)
 
@@ -111,6 +115,17 @@ func loop(
 			)
 			slowMonitor = monitors.NewSlowMonitor(ioGroup) // Reset monitor
 			lastSlow = nowSlow
+		}
+
+		if time.Since(lastChan).Seconds() > 300 {
+			nowChan = time.Now()
+			chanMonitor.WriteToInflux(
+				writeAPI,
+				time.Unix(msgTime, 0),
+				nowChan.Sub(lastChan).Seconds(),
+			)
+			chanMonitor = monitors.NewChanMonitor(ioGroup) // Reset monitor
+			lastChan = nowChan
 		}
 
 		// if time.Since(lastPlots).Seconds() > plotNorms.Freq {

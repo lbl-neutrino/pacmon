@@ -119,7 +119,9 @@ func loop(
 
 		if time.Since(lastChan).Seconds() > 300 {
 			nowChan = time.Now()
-			chanMonitor.WriteToInflux(
+			// Write a copy in the background so the loop isn't blocked
+			chanCopy := *chanMonitor // Deep copy (struct holds only arrays)
+			go chanCopy.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),
 				nowChan.Sub(lastChan).Seconds(),

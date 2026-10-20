@@ -130,9 +130,6 @@ func (m *FastMonitor) WriteToInflux(
 	// m.writeOtherStatusesRatesPerChip(writeAPI, timeNow, timeDiff)
 	// m.writeLocalFifoStatuses(writeAPI, timeNow)
 	// m.writeSharedFifoStatuses(writeAPI, timeNow)
-
-	writeAPI.Flush()
-
 }
 
 func (m *FastMonitor) writeDataStatusesRates(

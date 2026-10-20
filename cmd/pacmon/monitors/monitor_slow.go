@@ -215,8 +215,6 @@ func (m *SlowMonitor) WriteToInflux(
 	m.writeTopAdcRmsChannels(writeAPI, timeNow)
 	m.writeTopInvalidParityChips(writeAPI, timeNow, timeDiff)
 	m.writeTopSharedFifoFullChips(writeAPI, timeNow, timeDiff)
-
-	writeAPI.Flush()
 }
 
 func (m *SlowMonitor) writePacketAdcTotal(

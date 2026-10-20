@@ -89,8 +89,6 @@ func (m *ChanMonitor) WriteToInflux(
 	m.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	// m.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	// m.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
-
-	writeAPI.Flush()
 }
 
 func (m *ChanMonitor) writeConfigStatusesRatesPerChannel(

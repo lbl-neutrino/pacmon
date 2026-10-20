@@ -35,7 +35,6 @@ func (sm *SyncMonitor) WriteToInflux(
 	timeNow time.Time,
 ) {
 	sm.writeSync(writeAPI, timeNow)
-	writeAPI.Flush()
 }
 
 func (sm *SyncMonitor) writeSync(

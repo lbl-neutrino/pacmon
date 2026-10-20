@@ -33,7 +33,6 @@ func (tm *TrigMonitor) WriteToInflux(
 	timeNow time.Time,
 ) {
 	tm.writeTrigger(writeAPI, timeNow)
-	writeAPI.Flush()
 }
 
 func (tm *TrigMonitor) writeTrigger(

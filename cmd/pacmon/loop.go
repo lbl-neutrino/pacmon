@@ -79,7 +79,7 @@ func loop(
 			trigMonitor.ProcessWord(word, ioGroup)
 		}
 
-		if len(syncMonitor.Time) > 60 {
+		if len(syncMonitor.Time) > 0 {
 			go syncMonitor.WriteToInflux(
 				writeAPI,
 				time.Unix(msgTime, 0),

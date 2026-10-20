@@ -207,18 +207,12 @@ func (m *SlowMonitor) WriteToInflux(
 	timeNow time.Time,
 	timeDiff float64,
 ) {
-
-	// point := makePoint("packet_adc_total", timeNow)
-	// point.AddField("adc_mean", m.ADCMeanTotal)
-	// point.AddField("adc_rms", m.ADCRMSTotal)
-	// point.AddField("n_packets", m.NPacketsTotal)
-	// writeAPI.WritePoint(point)
-
-	// m.writePacketAdcPerChannel(writeAPI, timeNow)
+	m.writePacketAdcTotal(writeAPI, timeNow)
+	m.writePacketAdcPerChannel(writeAPI, timeNow)
 	m.writePacketAdcPerChip(writeAPI, timeNow)
-	// m.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
-	// m.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
-	// m.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	m.writeDataStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	m.writeConfigStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
+	m.writeOtherStatusesRatesPerChannel(writeAPI, timeNow, timeDiff)
 	m.writeTopDataRateChannels(writeAPI, timeNow, timeDiff)
 	m.writeBottomDataRateChannels(writeAPI, timeNow, timeDiff)
 	m.writeTopAdcMeanChannels(writeAPI, timeNow)
@@ -227,7 +221,17 @@ func (m *SlowMonitor) WriteToInflux(
 	m.writeTopSharedFifoFullChips(writeAPI, timeNow, timeDiff)
 
 	writeAPI.Flush()
+}
 
+func (m *SlowMonitor) writePacketAdcTotal(
+	writeAPI api.WriteAPI,
+	timeNow time.Time,
+) {
+	point := makePoint("packet_adc_total", timeNow)
+	point.AddField("adc_mean", m.ADCMeanTotal)
+	point.AddField("adc_rms", m.ADCRMSTotal)
+	point.AddField("n_packets", m.NPacketsTotal)
+	writeAPI.WritePoint(point)
 }
 
 func (m *SlowMonitor) writePacketAdcPerChannel(

@@ -18,6 +18,7 @@ const blockSize = 10000
 var gOptions struct {
 	Port            uint16
 	StartSecondsAgo int64
+	SecondsPerFile  float64
 }
 
 var gCmd = cobra.Command{
@@ -78,6 +79,18 @@ func replayFile(socket *zmq.Socket, fname string, tOffset *int64) error {
 		if err := r.ReadBlock(start, count, send); err != nil {
 			return err
 		}
+
+		// Pace so that the fraction of the file sent tracks the fraction of
+		// seconds-per-file elapsed. Targeting the cumulative schedule (rather
+		// than a fixed per-block sleep) absorbs variations in send/read time.
+		if gOptions.SecondsPerFile > 0 {
+			frac := float64(start+count) / float64(r.Len)
+			target := startTime.Add(time.Duration(
+				frac * gOptions.SecondsPerFile * float64(time.Second)))
+			if wait := time.Until(target); wait > 0 {
+				time.Sleep(wait)
+			}
+		}
 	}
 
 	elapsed := time.Now().Unix() - startTime.Unix()
@@ -133,6 +146,11 @@ func main() {
 		Int64VarP(&gOptions.StartSecondsAgo, "start-seconds-ago", "t", 0,
 			"if set, add a constant offset to all UNIX timestamps such that "+
 				"the first msg has a timestamp of start-seconds-ago before now")
+
+	gCmd.PersistentFlags().
+		Float64VarP(&gOptions.SecondsPerFile, "seconds-per-file", "s", 0,
+			"if set, pause between blocks so that replaying each file takes "+
+				"approximately this many seconds of wall time")
 
 	if err := gCmd.Execute(); err != nil {
 		log.Fatal(err)

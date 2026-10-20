@@ -117,7 +117,7 @@ func loop(
 			lastSlow = nowSlow
 		}
 
-		if time.Since(lastChan).Seconds() > 300 {
+		if time.Since(lastChan).Seconds() > 600 {
 			nowChan = time.Now()
 			// Write a copy in the background so the loop isn't blocked
 			chanCopy := *chanMonitor // Deep copy (struct holds only arrays)

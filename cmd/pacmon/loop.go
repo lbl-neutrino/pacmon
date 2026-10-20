@@ -100,7 +100,7 @@ func loop(
 			lastFast = nowFast
 		}
 
-		if time.Since(lastSlow).Seconds() > 300 {
+		if time.Since(lastSlow).Seconds() > 10 {
 			nowSlow = time.Now()
 			slowMonitor.UpdateTopHotChannels() // Only sort once
 			slowMonitor.UpdateTopChips()

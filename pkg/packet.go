@@ -74,7 +74,7 @@ func (p Packet) Data() uint16 {
 
 func (p *Packet) SetData(data uint16) {
 	p[5] |= byte(data & 2) << 6
-	p[6] = byte(data >> 8)
+	p[6] = byte(data >> 2)
 }
 
 func (p Packet) TrigType() uint8 {

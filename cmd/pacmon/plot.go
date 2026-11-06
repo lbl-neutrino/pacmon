@@ -13,7 +13,6 @@ import (
 
 	// "gonum.org/v1/plot/vg/vgimg"
 	// "gonum.org/v1/gonum/mat"
-	"log"
 	"math"
 	"os"
 	"time"
@@ -70,18 +69,27 @@ func plotMetrics(
 		}
 		channelKey := monitors.ChannelKeyAt(mPlots.IoGroup, channel)
 
-		// convert from monitors.ChannelKey to ChannelTile
+		// // convert from monitors.ChannelKey to ChannelTile
+		// var channelTile ChannelTile
+		// channelTile.IoGroup = 2 - (channelKey.IoGroup % 2)
+		// channelTile.TileID = (uint8(channelKey.IoChannel)-1)/4 + 1 +
+		// 	8*(1-(channelKey.IoGroup%2))
+		// channelTile.ChipID = channelKey.ChipID
+		// channelTile.ChannelID = channelKey.ChannelID
+
 		var channelTile ChannelTile
-		channelTile.IoGroup = 2 - (channelKey.IoGroup % 2)
-		channelTile.TileID = (uint8(channelKey.IoChannel)-1)/4 + 1 +
-			8*(1-(channelKey.IoGroup%2))
+		channelTile.IoGroup = channelKey.IoGroup
+		iokey := IoGroupIoChannel{
+			IoGroup: int(channelKey.IoGroup),
+			IoChannel: int(channelKey.IoChannel)}
+		channelTile.TileID = uint8(geometry.IoGroupIoChannelToTile[iokey])
 		channelTile.ChipID = channelKey.ChipID
 		channelTile.ChannelID = channelKey.ChannelID
 
 		// Get XY positions
 		xy, ok := geometry.ChannelToXY[channelTile]
 		if !ok {
-			fmt.Println(channelTile, " not found in the geometry")
+			fmt.Println(channelKey, " not found in the geometry")
 			continue
 		}
 
@@ -284,7 +292,8 @@ func plotMetrics(
 			now.Second(),
 		),
 	); err != nil {
-		log.Panic(err)
+		fmt.Printf("Error saving timestamped mean plot for io_group = %d", ioGroup)
+		fmt.Println(err)
 	}
 	if err := pRMS.Save(
 		width,
@@ -302,7 +311,8 @@ func plotMetrics(
 			now.Second(),
 		),
 	); err != nil {
-		log.Panic(err)
+		fmt.Printf("Error saving timestamped RMS plot for io_group = %d", ioGroup)
+		fmt.Println(err)
 	}
 	if err := pRate.Save(
 		width,
@@ -320,7 +330,8 @@ func plotMetrics(
 			now.Second(),
 		),
 	); err != nil {
-		log.Panic(err)
+		fmt.Printf("Error saving timestamped rate plot for io_group = %d", ioGroup)
+		fmt.Println(err)
 	}
 	// Save for instant updates
 	if err := pMean.Save(
@@ -332,7 +343,8 @@ func plotMetrics(
 			ioGroup,
 		),
 	); err != nil {
-		log.Panic(err)
+		fmt.Printf("Error saving RealTime rate plot for io_group = %d", ioGroup)
+		fmt.Println(err)
 	}
 	s := fmt.Sprintf(
 		"%d-%02d-%02d\n%02d:%02d:%02d",
@@ -367,7 +379,8 @@ func plotMetrics(
 			ioGroup,
 		),
 	); err != nil {
-		log.Panic(err)
+		fmt.Printf("Error saving RMS plot for io_group = %d", ioGroup)
+		fmt.Println(err)
 	}
 	if err := pRate.Save(
 		width,
@@ -378,7 +391,8 @@ func plotMetrics(
 			ioGroup,
 		),
 	); err != nil {
-		log.Panic(err)
+		fmt.Printf("Error saving rate plot for io_group = %d", ioGroup)
+		fmt.Println(err)
 	}
 
 }

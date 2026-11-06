@@ -42,6 +42,7 @@ def main(geometry_yaml=_default_geometry_yaml, outfile_path=_default_outfile_pat
         io_group_io_channel_to_tile = {}
         geometry = defaultdict(_default_pxy)
 
+        tile2iochans = defaultdict(set)
         for tile in geo['tile_chip_to_io']:
             tile_orientation = tile_orientations[tile]
             tile_geometry[tile] = tile_positions[tile], tile_orientations[tile]
@@ -51,6 +52,7 @@ def main(geometry_yaml=_default_geometry_yaml, outfile_path=_default_outfile_pat
                 io_channel = io_group_io_channel % 1000
                 io_group_io_channel_to_tile[(
                     io_group, io_channel)] = tile
+                tile2iochans[tile].add(io_channel)
 
             for chip_channel in geo['chip_channel_to_position']:
                 chip = chip_channel // 1000
@@ -74,14 +76,21 @@ def main(geometry_yaml=_default_geometry_yaml, outfile_path=_default_outfile_pat
             
                 y += tile_positions[tile][1] 
                     
-
-                geometry['{}-{}-{}-{}'.format(io_group, io_group_io_channel_to_tile[(
-                    io_group, io_channel)], chip, channel)] = x, y
+                tile = io_group_io_channel_to_tile[(io_group, io_channel)]
+                # for iochan in tile2iochans[tile]:
+                #     geometry['{}-{}-{}-{}'.format(io_group, iochan, chip, channel)] = x, y
+                geometry['{}-{}-{}-{}'.format(io_group, tile, chip, channel)] = x, y
 
         # Save dictionaries
         d = dict()
         d['geometry'] = geometry
         d['pixel_pitch'] = pixel_pitch
+        d['tile_to_io_channels'] = (
+            {tile: list(sorted(tile2iochans[tile]))
+             for tile in sorted(tile2iochans.keys())})
+        d['io_group_io_channel_to_tile'] = {
+            f'{iog}-{iochan}': tile
+            for (iog, iochan), tile in io_group_io_channel_to_tile.items()}
 
         with open(outfile_path, "w") as outfile:
             json.dump(d, outfile)

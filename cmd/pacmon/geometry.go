@@ -19,14 +19,31 @@ type ChannelTile struct {
 	ChipID    uint8
 	ChannelID uint8
 }
+
 type Geometry struct {
 	Pitch       float64
 	ChannelToXY map[ChannelTile]XY
+	IoGroupIoChannelToTile map[IoGroupIoChannel]int
 }
 
 type GeoConfig struct {
 	Pitch    float64               `json:"pixel_pitch"`
 	Geometry map[string][2]float64 `json:"geometry"`
+	// Keys are tile IDs (JSON object keys are decoded from strings to ints)
+	TileToIoChannels map[int][]int `json:"tile_to_io_channels"`
+	// Keys are "<io_group>-<io_channel>" strings in the JSON file
+	IoGroupIoChannelToTile map[IoGroupIoChannel]int `json:"io_group_io_channel_to_tile"`
+}
+
+type IoGroupIoChannel struct {
+	IoGroup   int
+	IoChannel int
+}
+
+// Lets encoding/json decode "<io_group>-<io_channel>" object keys
+func (k *IoGroupIoChannel) UnmarshalText(text []byte) error {
+	_, err := fmt.Sscanf(string(text), "%d-%d", &k.IoGroup, &k.IoChannel)
+	return err
 }
 
 func ReadGeometryFile(path string) GeoConfig {
@@ -53,6 +70,7 @@ func LoadGeometry(path string) Geometry {
 	config := ReadGeometryFile(path)
 
 	geo.Pitch = config.Pitch
+	geo.IoGroupIoChannelToTile = config.IoGroupIoChannelToTile
 	geo.ChannelToXY = make(map[ChannelTile]XY)
 
 	for str, pos := range config.Geometry {

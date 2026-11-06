@@ -214,10 +214,9 @@ func main() {
 	cmd.PersistentFlags().
 		StringSliceVar(&flags.PacmanGeom, "pacman-geom",
 			[]string{
-				"/nfs/home/np04daq/pCRP/pacmon/geometries_pcrp/geometry_pcrp_iog1.json",
-				"/nfs/home/np04daq/pCRP/pacmon/geometries_pcrp/geometry_pcrp_iog2.json",
-				"/nfs/home/np04daq/pCRP/pacmon/geometries_pcrp/geometry_pcrp_iog5.json",
-				"/nfs/home/np04daq/pCRP/pacmon/geometries_pcrp/geometry_pcrp_iog6.json"},
+				"/nfs/home/np04daq/pCRP/pacmon/geometries_pcrp/geometry_pcrp_iog3.json",
+				"/nfs/home/np04daq/pCRP/pacmon/geometries_pcrp/geometry_pcrp_iog4.json",
+			},
 			"Comma-separated list of corresponding geometry JSON files "+
 				"(a single file applies to every IO group)")
 	cmd.PersistentFlags().

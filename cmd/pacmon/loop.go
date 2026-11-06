@@ -130,7 +130,7 @@ func loop(
 
 		if time.Since(lastPlots).Seconds() > plotNorms.Freq {
 			nowPlots = time.Now()
-			plotMetrics(monitorPlots, geometry, ioGroup,
+			go plotMetrics(monitorPlots, geometry, ioGroup,
 				plotNorms, nowPlots.Sub(lastPlots).Seconds(), flags.PlotsDir)
 			monitorPlots = monitors.NewMonitorPlots(ioGroup) // Reset monitor
 			lastPlots = nowPlots

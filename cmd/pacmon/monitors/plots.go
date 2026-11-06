@@ -7,9 +7,9 @@ import (
 type MonitorPlots struct {
 	IoGroup uint8
 
-	ADCMeanPerChannel          [NUM_CHANNELS]float64
-	ADCRMSPerChannel           [NUM_CHANNELS]float64
-	NPacketsPerChannel         [NUM_CHANNELS]uint32
+	ADCMeanPerChannel  [NUM_CHANNELS]float64
+	ADCRMSPerChannel   [NUM_CHANNELS]float64
+	NPacketsPerChannel [NUM_CHANNELS]uint32
 }
 
 func NewMonitorPlots(ioGroup uint8) *MonitorPlots {

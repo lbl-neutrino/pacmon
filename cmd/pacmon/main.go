@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -153,6 +154,12 @@ func run(cmd *cobra.Command, args []string) {
 
 	flags.PacmanURL = broadcastFlag(flags.PacmanURL, len(flags.PacmanIog), "--pacman-url")
 	flags.PacmanGeom = broadcastFlag(flags.PacmanGeom, len(flags.PacmanIog), "--pacman-geom")
+
+	for _, sub := range []string{"mean", "rms", "rate", "RealTime"} {
+		if err := os.MkdirAll(filepath.Join(flags.PlotsDir, sub), 0775); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	// Load each distinct geometry file only once
 	geometries := make(map[string]Geometry)

@@ -35,7 +35,7 @@ func loop(
 
 	socket, err := zmq.NewSocket(zmq.SUB)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("NewSocket ", err)
 	}
 	socket.SetSubscribe("")
 	socket.Connect(singlePacmanURL)
@@ -56,14 +56,14 @@ func loop(
 
 		raw, err := socket.Recv(0)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Recv ", err)
 		}
 
 		r := bytes.NewReader([]byte(raw))
 		msg := Msg{}
 		err = msg.Read(r)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Read ", err)
 		}
 
 		msgTime := int64(msg.Header.Timestamp)

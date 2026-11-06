@@ -89,7 +89,7 @@ func plotMetrics(
 		// Get XY positions
 		xy, ok := geometry.ChannelToXY[channelTile]
 		if !ok {
-			fmt.Println(channelKey, " not found in the geometry")
+			fmt.Println("key", channelKey, "tileId", channelTile, " not found in the geometry")
 			continue
 		}
 

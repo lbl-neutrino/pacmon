@@ -56,14 +56,16 @@ func loop(
 
 		raw, err := socket.Recv(0)
 		if err != nil {
-			log.Fatal("Recv ", err)
+			log.Println("Error receiving from Pacman socket on io_group", ioGroup, " : ", err)
+			continue
 		}
 
 		r := bytes.NewReader([]byte(raw))
 		msg := Msg{}
 		err = msg.Read(r)
 		if err != nil {
-			log.Fatal("Read ", err)
+			log.Println("Error reading from Pacman socket on io_group", ioGroup, " : ", err)
+			continue
 		}
 
 		msgTime := int64(msg.Header.Timestamp)

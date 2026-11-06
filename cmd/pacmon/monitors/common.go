@@ -65,7 +65,7 @@ const (
 // the corresponding arrays.
 const (
 	MAX_IO_CHANNELS          = 40
-	MAX_CHIPS_PER_IO_CHANNEL = 160
+	MAX_CHIPS_PER_IO_CHANNEL = 170
 	MAX_CHANNELS_PER_CHIP    = 64
 
 	// Io channels index directly, so slot 0 is unused

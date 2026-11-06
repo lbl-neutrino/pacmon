@@ -212,7 +212,8 @@ func main() {
 		StringSliceVar(&flags.PacmanIog, "pacman-iog", nil,
 			"Comma-separated list of corresponding IO groups")
 	cmd.PersistentFlags().
-		StringSliceVar(&flags.PacmanGeom, "pacman-geom", nil,
+		StringSliceVar(&flags.PacmanGeom, "pacman-geom",
+			[]string{"/nfs/home/np04daq/pCRP/pacmon/geometry_pcrp.json"},
 			"Comma-separated list of corresponding geometry JSON files "+
 				"(a single file applies to every IO group)")
 	cmd.PersistentFlags().
@@ -242,7 +243,7 @@ func main() {
 		Float64VarP(&flags.PlotNorms.Rate, "norm-rate", "r", 10.,
 			"Norm for the rate plots")
 	cmd.PersistentFlags().
-		StringVar(&flags.PlotsDir, "plots-dir", "/data/plots",
+		StringVar(&flags.PlotsDir, "plots-dir", "/nfs/home/np04daq/pCRP/pacmon/plots",
 			"Output directory for plots")
 	cmd.PersistentFlags().
 		Float64VarP(&flags.DisabledListOptions.Freq,

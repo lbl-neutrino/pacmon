@@ -275,64 +275,64 @@ func plotMetrics(
 	fmt.Println(now, ": saving plot for io_group = ", ioGroup)
 	width := font.Length((maxX-minX)*vg.Millimeter.Points() + 30.)
 	height := font.Length((maxY-minY)*vg.Millimeter.Points() + 150.)
-	// Save for history
-	if err := pMean.Save(
-		width,
-		height,
-		fmt.Sprintf(
-			"%s/mean/iog_%d_mean_"+
-				"%d_%02d_%02d_%02d_%02d_%02d.png",
-			plotsDir,
-			ioGroup,
-			now.Year(),
-			now.Month(),
-			now.Day(),
-			now.Hour(),
-			now.Minute(),
-			now.Second(),
-		),
-	); err != nil {
-		fmt.Printf("Error saving timestamped mean plot for io_group = %d", ioGroup)
-		fmt.Println(err)
-	}
-	if err := pRMS.Save(
-		width,
-		height,
-		fmt.Sprintf(
-			"%s/rms/iog_%d_rms_"+
-				"%d_%02d_%02d_%02d_%02d_%02d.png",
-			plotsDir,
-			ioGroup,
-			now.Year(),
-			now.Month(),
-			now.Day(),
-			now.Hour(),
-			now.Minute(),
-			now.Second(),
-		),
-	); err != nil {
-		fmt.Printf("Error saving timestamped RMS plot for io_group = %d", ioGroup)
-		fmt.Println(err)
-	}
-	if err := pRate.Save(
-		width,
-		height,
-		fmt.Sprintf(
-			"%s/rate/iog_%d_rate_"+
-				"%d_%02d_%02d_%02d_%02d_%02d.png",
-			plotsDir,
-			ioGroup,
-			now.Year(),
-			now.Month(),
-			now.Day(),
-			now.Hour(),
-			now.Minute(),
-			now.Second(),
-		),
-	); err != nil {
-		fmt.Printf("Error saving timestamped rate plot for io_group = %d", ioGroup)
-		fmt.Println(err)
-	}
+	// // Save for history
+	// if err := pMean.Save(
+	// 	width,
+	// 	height,
+	// 	fmt.Sprintf(
+	// 		"%s/mean/iog_%d_mean_"+
+	// 			"%d_%02d_%02d_%02d_%02d_%02d.png",
+	// 		plotsDir,
+	// 		ioGroup,
+	// 		now.Year(),
+	// 		now.Month(),
+	// 		now.Day(),
+	// 		now.Hour(),
+	// 		now.Minute(),
+	// 		now.Second(),
+	// 	),
+	// ); err != nil {
+	// 	fmt.Printf("Error saving timestamped mean plot for io_group = %d", ioGroup)
+	// 	fmt.Println(err)
+	// }
+	// if err := pRMS.Save(
+	// 	width,
+	// 	height,
+	// 	fmt.Sprintf(
+	// 		"%s/rms/iog_%d_rms_"+
+	// 			"%d_%02d_%02d_%02d_%02d_%02d.png",
+	// 		plotsDir,
+	// 		ioGroup,
+	// 		now.Year(),
+	// 		now.Month(),
+	// 		now.Day(),
+	// 		now.Hour(),
+	// 		now.Minute(),
+	// 		now.Second(),
+	// 	),
+	// ); err != nil {
+	// 	fmt.Printf("Error saving timestamped RMS plot for io_group = %d", ioGroup)
+	// 	fmt.Println(err)
+	// }
+	// if err := pRate.Save(
+	// 	width,
+	// 	height,
+	// 	fmt.Sprintf(
+	// 		"%s/rate/iog_%d_rate_"+
+	// 			"%d_%02d_%02d_%02d_%02d_%02d.png",
+	// 		plotsDir,
+	// 		ioGroup,
+	// 		now.Year(),
+	// 		now.Month(),
+	// 		now.Day(),
+	// 		now.Hour(),
+	// 		now.Minute(),
+	// 		now.Second(),
+	// 	),
+	// ); err != nil {
+	// 	fmt.Printf("Error saving timestamped rate plot for io_group = %d", ioGroup)
+	// 	fmt.Println(err)
+	// }
 	// Save for instant updates
 	if err := pMean.Save(
 		width,

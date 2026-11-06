@@ -44,6 +44,7 @@ type Flags struct {
 	InfluxOrg           string
 	InfluxBucket        string
 	PlotNorms           Norms
+	PlotsDir            string
 	DisabledListOptions DLOptions
 	Profile             bool
 }
@@ -233,6 +234,9 @@ func main() {
 	cmd.PersistentFlags().
 		Float64VarP(&flags.PlotNorms.Rate, "norm-rate", "r", 10.,
 			"Norm for the rate plots")
+	cmd.PersistentFlags().
+		StringVar(&flags.PlotsDir, "plots-dir", "/data/plots",
+			"Output directory for plots")
 	cmd.PersistentFlags().
 		Float64VarP(&flags.DisabledListOptions.Freq,
 			"disable-list-freq", "d", 60.,

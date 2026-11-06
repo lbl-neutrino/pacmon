@@ -27,6 +27,7 @@ func plotMetrics(
 	ioGroup uint8,
 	norms Norms,
 	timeDiff float64,
+	plotsDir string,
 ) {
 
 	length := 0
@@ -271,8 +272,9 @@ func plotMetrics(
 		width,
 		height,
 		fmt.Sprintf(
-			"/data/plots/mean/iog_%d_mean_"+
+			"%s/mean/iog_%d_mean_"+
 				"%d_%02d_%02d_%02d_%02d_%02d.png",
+			plotsDir,
 			ioGroup,
 			now.Year(),
 			now.Month(),
@@ -288,8 +290,9 @@ func plotMetrics(
 		width,
 		height,
 		fmt.Sprintf(
-			"/data/plots/rms/iog_%d_rms_"+
+			"%s/rms/iog_%d_rms_"+
 				"%d_%02d_%02d_%02d_%02d_%02d.png",
+			plotsDir,
 			ioGroup,
 			now.Year(),
 			now.Month(),
@@ -305,8 +308,9 @@ func plotMetrics(
 		width,
 		height,
 		fmt.Sprintf(
-			"/data/plots/rate/iog_%d_rate_"+
+			"%s/rate/iog_%d_rate_"+
 				"%d_%02d_%02d_%02d_%02d_%02d.png",
+			plotsDir,
 			ioGroup,
 			now.Year(),
 			now.Month(),
@@ -323,7 +327,8 @@ func plotMetrics(
 		width,
 		height,
 		fmt.Sprintf(
-			"/data/plots/RealTime/iog_%d_mean.png",
+			"%s/RealTime/iog_%d_mean.png",
+			plotsDir,
 			ioGroup,
 		),
 	); err != nil {
@@ -340,7 +345,8 @@ func plotMetrics(
 	)
 	f, err := os.Create(
 		fmt.Sprintf(
-			"/data/plots/RealTime/iog_%d_last_update.txt",
+			"%s/RealTime/iog_%d_last_update.txt",
+			plotsDir,
 			ioGroup,
 		),
 	)
@@ -356,7 +362,8 @@ func plotMetrics(
 		width,
 		height,
 		fmt.Sprintf(
-			"/data/plots/RealTime/iog_%d_rms.png",
+			"%s/RealTime/iog_%d_rms.png",
+			plotsDir,
 			ioGroup,
 		),
 	); err != nil {
@@ -366,7 +373,8 @@ func plotMetrics(
 		width,
 		height,
 		fmt.Sprintf(
-			"/data/plots/RealTime/iog_%d_rate.png",
+			"%s/RealTime/iog_%d_rate.png",
+			plotsDir,
 			ioGroup,
 		),
 	); err != nil {

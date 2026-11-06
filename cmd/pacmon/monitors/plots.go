@@ -10,7 +10,6 @@ type MonitorPlots struct {
 	ADCMeanPerChannel          [NUM_CHANNELS]float64
 	ADCRMSPerChannel           [NUM_CHANNELS]float64
 	NPacketsPerChannel         [NUM_CHANNELS]uint32
-	DataStatusCountsPerChannel [NUM_CHANNELS]DataStatusCounts
 }
 
 func NewMonitorPlots(ioGroup uint8) *MonitorPlots {

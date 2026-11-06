@@ -28,7 +28,7 @@ func loop(
 	fastMonitor := monitors.NewFastMonitor(ioGroup)
 	slowMonitor := monitors.NewSlowMonitor(ioGroup)
 	chanMonitor := monitors.NewChanMonitor(ioGroup)
-	// monitorPlots := monitors.NewMonitorPlots(ioGroup)
+	monitorPlots := monitors.NewMonitorPlots(ioGroup)
 	disabledListMonitor := monitors.NewDisabledListMonitor(ioGroup)
 	syncMonitor := monitors.NewSyncMonitor()
 	trigMonitor := monitors.NewTrigMonitor()
@@ -47,9 +47,9 @@ func loop(
 	lastSlow := time.Now()
 	nowChan := time.Now()
 	lastChan := time.Now()
-	// nowPlots := time.Now()
+	nowPlots := time.Now()
 	// nowDisabledList := time.Now()
-	// lastPlots := time.Now()
+	lastPlots := time.Now()
 	// lastDisabledList := time.Now()
 
 	for {
@@ -72,7 +72,7 @@ func loop(
 			fastMonitor.ProcessWord(word)
 			slowMonitor.ProcessWord(word)
 			chanMonitor.ProcessWord(word)
-			// monitorPlots.ProcessWord(word)
+			monitorPlots.ProcessWord(word)
 			disabledListMonitor.ProcessWord(word)
 
 			syncMonitor.ProcessWord(word, ioGroup)
@@ -128,13 +128,13 @@ func loop(
 			lastChan = nowChan
 		}
 
-		// if time.Since(lastPlots).Seconds() > plotNorms.Freq {
-		// 	nowPlots = time.Now()
-		// 	plotMetrics(monitorPlots, geometry, ioGroup,
-		// 		plotNorms, nowPlots.Sub(lastPlots).Seconds())
-		// 	monitorPlots = monitors.NewMonitorPlots(ioGroup) // Reset monitor
-		// 	lastPlots = nowPlots
-		// }
+		if time.Since(lastPlots).Seconds() > plotNorms.Freq {
+			nowPlots = time.Now()
+			plotMetrics(monitorPlots, geometry, ioGroup,
+				plotNorms, nowPlots.Sub(lastPlots).Seconds())
+			monitorPlots = monitors.NewMonitorPlots(ioGroup) // Reset monitor
+			lastPlots = nowPlots
+		}
 
 		// if time.Since(lastDisabledList).
 		// 	Seconds() >
